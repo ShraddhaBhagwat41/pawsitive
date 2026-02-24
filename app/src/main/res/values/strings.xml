@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">Pawsitive</string>
+    <string name="app_name_display">Pawsitive</string>
+    <string name="tagline">Care. Connect. Rescue</string>
+    
+    <!-- Welcome Screen -->
+    <string name="get_started">Get Started</string>
+    <string name="already_have_account">Already have an account? <b>Login</b></string>
+    <string name="app_logo">Pawsitive App Logo</string>
+    
+    <!-- Login Screen -->
+    <string name="welcome_back">Welcome <font color="#FFC727">Back!</font></string>
+    <string name="hint_email">example@gmail.com</string>
+    <string name="hint_password">Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="log_in">Log in</string>
+    <string name="dont_have_account">Doesn\'t have an account? <b>Signup</b></string>
+    <string name="dog_illustration">Dog Illustration</string>
+    
+    <!-- Main Screen - Responders -->
+    <string name="responders_notified">Responders Notified</string>
+    <string name="notification_send">Notification Send</string>
+    <string name="notification_pending">Notification Pending</string>
+    <string name="map_view">Map View</string>
+    <string name="user_icon">User Icon</string>
+    <string name="status_icon">Status Icon</string>
+    
+    <!-- Signup Screen -->
+    <string name="back_button">Back</string>
+    <string name="sign_up_title">Sign <font color="#FFC727">Up</font></string>
+    <string name="signup_subtitle">Create a new account to join Pawsitive!</string>
+    <string name="hint_username">Username</string>
+    <string name="hint_email_phone">Email or Phone Number</string>
+    <string name="agree_terms">I agree to terms and conditions</string>
+    <string name="continue_btn">Continue</string>
+    <string name="already_have_account_login">Already have an account? <b>Login</b></string>
+    <string name="signup_illustration">Signup Illustration</string>
+    
+    <!-- Progress Steps -->
+    <string name="step_basic">Basic</string>
+    <string name="step_profile">Profile</string>
+    <string name="step_questionnaire">Questionnaire</string>
+    <string name="progress_0">0%</string>
+    <string name="progress_100">100%</string>
+    
+    <!-- Report Animal Screen -->
+    <string name="report_animal_title">Report Animal in <font color="#FFC727">need</font></string>
+    <string name="report_animal_subtitle">Please ensure the photo and details are clear so rescuers can bring the right medical supplies.</string>
+    <string name="upload_photo">Upload Photo</string>
+    <string name="maximum_images">Maximum (2 images)</string>
+    <string name="hint_location">Location</string>
+    <string name="hint_description">Description</string>
+    <string name="submit_report">Submit Report</string>
+    
+    <!-- Home Screen -->
+    <string name="menu">Menu</string>
+    <string name="notifications">Notifications</string>
+    <string name="profile">Profile</string>
+    <string name="search_for_pet">Search for a pet</string>
+    <string name="search">Search</string>
+    <string name="filter">Filter</string>
+    <string name="all">All</string>
+    <string name="dog">Dog</string>
+    <string name="cat">Cat</string>
+    <string name="rabbit">Rabbit</string>
+    <string name="saved_pets">Saved Pets</string>
+    <string name="view_all">View All</string>
+    <string name="pet_image">Pet Image</string>
+    <string name="favorite">Favorite</string>
+    <string name="location">Location</string>
+    <string name="report_incident">Report Incident</string>
+    <string name="emergency">Emergency</string>
+    <string name="add_pet">Add Pet\nList a new pet</string>
+    <string name="home">Home</string>
+    <string name="favorites">Favorites</string>
+    <string name="messages">Messages</string>
+    <string name="community">Community</string>
+</resources>

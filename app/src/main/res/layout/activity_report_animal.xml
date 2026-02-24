@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:fillViewport="true"
+    tools:context=".ReportAnimalActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Back Button -->
+        <ImageView
+            android:id="@+id/ivBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_back_arrow"
+            android:contentDescription="@string/back_button"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/report_animal_title"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="@color/gray_dark"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Subtitle -->
+        <TextView
+            android:id="@+id/tvSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/report_animal_subtitle"
+            android:textSize="14sp"
+            android:textColor="@color/gray_text"
+            android:lineSpacingExtra="2dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Photo Upload Section -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="8dp">
+
+            <!-- Circular Photo Icon -->
+            <ImageView
+                android:id="@+id/ivPhotoIcon"
+                android:layout_width="160dp"
+                android:layout_height="160dp"
+                android:clickable="true"
+                android:contentDescription="@string/upload_photo"
+                android:focusable="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_camera_circle" />
+
+            <Spinner
+                android:id="@+id/spinnerCondition"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/spinner_background"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:spinnerMode="dropdown" />
+
+        </RelativeLayout>
+
+        <!-- Maximum Images Text -->
+        <TextView
+            android:id="@+id/tvMaxImages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/maximum_images"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/gray_dark"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Animal Type Spinner -->
+        <Spinner
+            android:id="@+id/spinnerAnimalType"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@drawable/spinner_background"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:spinnerMode="dropdown"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Condition Spinner -->
+
+        <!-- Location Input -->
+        <EditText
+            android:id="@+id/etLocation"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="@string/hint_location"
+            android:inputType="text"
+            android:background="@drawable/input_field_background_gray"
+            android:paddingStart="48dp"
+            android:paddingEnd="16dp"
+            android:textSize="16sp"
+            android:textColor="@color/gray_dark"
+            android:textColorHint="@color/gray_text"
+            android:drawableStart="@drawable/ic_location"
+            android:drawablePadding="12dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Description Input (Multiline) -->
+        <EditText
+            android:id="@+id/etDescription"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:hint="@string/hint_description"
+            android:inputType="textMultiLine"
+            android:gravity="top|start"
+            android:background="@drawable/input_field_background_gray"
+            android:padding="16dp"
+            android:textSize="16sp"
+            android:textColor="@color/gray_dark"
+            android:textColorHint="@color/gray_text"
+            android:layout_marginBottom="24dp"
+            android:maxLines="5"
+            android:scrollbars="vertical" />
+
+        <!-- Submit Report Button -->
+        <Button
+            android:id="@+id/btnSubmitReport"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="@string/submit_report"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:background="@drawable/btn_rounded_yellow"
+            android:elevation="4dp"
+            android:textAllCaps="false" />
+
+    </LinearLayout>
+
+</ScrollView>

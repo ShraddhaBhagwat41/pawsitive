@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:fillViewport="true"
+    tools:context=".LoginActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="24dp">
+
+        <!-- Top Section with Logo and Dog Illustration -->
+        <LinearLayout
+            android:id="@+id/topSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <!-- Pawsitive Logo Image -->
+            <ImageView
+                android:id="@+id/ivPawsitiveLogo"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:src="@drawable/logo_pawsitive"
+                android:adjustViewBounds="true"
+                android:scaleType="centerInside"
+                android:contentDescription="@string/app_logo"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Dog Illustration -->
+            <ImageView
+                android:id="@+id/ivDogIllustration"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_marginTop="8dp"
+                android:contentDescription="@string/dog_illustration"
+                android:src="@drawable/ic_dog_welcome"
+                android:scaleType="fitCenter" />
+
+        </LinearLayout>
+
+        <!-- Form Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/topSection"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp">
+
+            <!-- Welcome Back Text -->
+            <TextView
+                android:id="@+id/tvWelcomeBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/welcome_back"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="@color/gray_dark"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Tagline -->
+            <TextView
+                android:id="@+id/tvTagline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tagline"
+                android:textSize="14sp"
+                android:textColor="@color/gray_text"
+                android:layout_marginBottom="32dp" />
+
+            <!-- Email Input -->
+            <EditText
+                android:id="@+id/etEmail"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:hint="@string/hint_email"
+                android:inputType="textEmailAddress"
+                android:background="@drawable/input_field_background"
+                android:paddingStart="48dp"
+                android:paddingEnd="16dp"
+                android:textSize="16sp"
+                android:textColor="@color/gray_dark"
+                android:textColorHint="@color/gray_text"
+                android:drawableStart="@drawable/ic_email"
+                android:drawablePadding="12dp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Password Input -->
+            <EditText
+                android:id="@+id/etPassword"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:hint="@string/hint_password"
+                android:inputType="textPassword"
+                android:background="@drawable/input_field_background"
+                android:paddingStart="48dp"
+                android:paddingEnd="16dp"
+                android:textSize="16sp"
+                android:textColor="@color/gray_dark"
+                android:textColorHint="@color/gray_text"
+                android:drawableStart="@drawable/ic_password"
+                android:drawablePadding="12dp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Forgot Password -->
+            <TextView
+                android:id="@+id/tvForgotPassword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/forgot_password"
+                android:textSize="14sp"
+                android:textColor="@color/gray_text"
+                android:layout_marginBottom="32dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Login Button -->
+            <Button
+                android:id="@+id/btnLogin"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="@string/log_in"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:background="@drawable/btn_rounded_yellow"
+                android:elevation="4dp"
+                android:layout_marginBottom="16dp"
+                android:textAllCaps="false" />
+
+            <!-- Signup Text -->
+            <TextView
+                android:id="@+id/tvSignup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/dont_have_account"
+                android:textSize="14sp"
+                android:textColor="@color/gray_dark"
+                android:layout_gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</ScrollView>
