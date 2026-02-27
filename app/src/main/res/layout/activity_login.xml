@@ -48,6 +48,7 @@
 
         <!-- Form Section -->
         <LinearLayout
+            android:id="@+id/formSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/topSection"
@@ -148,6 +149,14 @@
                 android:focusable="true" />
 
         </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:visibility="gone"
+            android:indeterminateTint="@color/yellow_primary" />
 
     </RelativeLayout>
 

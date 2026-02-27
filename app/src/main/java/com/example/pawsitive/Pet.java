@@ -8,14 +8,16 @@ public class Pet {
     private String distance;
     private boolean isFavorite;
     private String imageUrl;
+    private int imageResId;
 
-    public Pet(String name, String breed, String age, String description, String distance, boolean isFavorite) {
+    public Pet(String name, String breed, String age, String description, String distance, boolean isFavorite, int imageResId) {
         this.name = name;
         this.breed = breed;
         this.age = age;
         this.description = description;
         this.distance = distance;
         this.isFavorite = isFavorite;
+        this.imageResId = imageResId;
     }
 
     // Getters and Setters
@@ -74,4 +76,5 @@ public class Pet {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+    public int getImageResId() { return imageResId; }
 }
