@@ -35,8 +35,8 @@ public class WelcomeActivity extends AppCompatActivity {
         btnGetStarted.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Navigate to Login Activity (user needs to login/signup first)
-                Intent intent = new Intent(WelcomeActivity.this, LoginActivity.class);
+                // Navigate to Signup Activity so new users can register
+                Intent intent = new Intent(WelcomeActivity.this, SignupActivity.class);
                 startActivity(intent);
                 finish();
             }

@@ -39,6 +39,9 @@ public class SignupActivity extends AppCompatActivity {
         ivBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Navigate back to Welcome Activity
+                Intent intent = new Intent(SignupActivity.this, WelcomeActivity.class);
+                startActivity(intent);
                 finish();
             }
         });
