@@ -1,4 +1,4 @@
-package com.example.pawsitive;
+package com.pawsitive.app;
 
 import android.content.Context;
 import android.view.LayoutInflater;

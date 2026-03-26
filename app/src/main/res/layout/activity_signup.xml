@@ -28,9 +28,6 @@
             android:background="?attr/selectableItemBackgroundBorderless" />
 
         <!-- Top Section with Illustration -->
-
-        <!-- Form Section -->
-
         <LinearLayout
             android:id="@+id/topSection"
             android:layout_width="match_parent"
@@ -48,11 +45,9 @@
                 android:contentDescription="@string/signup_illustration"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_signup_pets" />
-
         </LinearLayout>
 
-        <!-- Progress Indicator Section -->
-
+        <!-- Form Section -->
         <LinearLayout
             android:id="@+id/formSection"
             android:layout_width="match_parent"
@@ -82,35 +77,33 @@
                 android:textColor="@color/gray_text"
                 android:textSize="14sp" />
 
-            <!-- Username Input -->
-
-            <!-- Email or Phone Input -->
-
+            <!-- Full Name Input (was etUsername) -->
             <EditText
-                android:id="@+id/etUsername"
+                android:id="@+id/etFullName"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/input_field_background"
                 android:drawableStart="@drawable/ic_username"
                 android:drawablePadding="12dp"
-                android:hint="@string/hint_username"
-                android:inputType="text"
+                android:hint="Full Name"
+                android:inputType="textPersonName"
                 android:paddingStart="48dp"
                 android:paddingEnd="16dp"
                 android:textColor="@color/gray_dark"
                 android:textColorHint="@color/gray_text"
                 android:textSize="16sp" />
 
+            <!-- Email Input (was etEmailPhone) -->
             <EditText
-                android:id="@+id/etEmailPhone"
+                android:id="@+id/etEmail"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/input_field_background"
                 android:drawableStart="@drawable/ic_email"
                 android:drawablePadding="12dp"
-                android:hint="@string/hint_email_phone"
+                android:hint="@string/hint_email"
                 android:inputType="textEmailAddress"
                 android:paddingStart="48dp"
                 android:paddingEnd="16dp"
@@ -172,9 +165,6 @@
                 android:text="@string/already_have_account_login"
                 android:textColor="@color/gray_dark"
                 android:textSize="14sp" />
-
         </LinearLayout>
-
     </RelativeLayout>
-
 </ScrollView>

@@ -1,4 +1,4 @@
-package com.example.pawsitive;
+package com.pawsitive.app;
 
 public class Responder {
     private String name;

@@ -1,4 +1,4 @@
-package com.example.pawsitive;
+package com.pawsitive.app;
 
 import android.content.Intent;
 import android.os.Bundle;

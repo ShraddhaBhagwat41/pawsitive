@@ -1,4 +1,4 @@
-package com.example.pawsitive;
+package com.pawsitive.app;
 
 import android.Manifest;
 import android.content.Intent;

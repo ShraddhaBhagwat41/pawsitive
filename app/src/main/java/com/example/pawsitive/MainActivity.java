@@ -1,4 +1,4 @@
-package com.example.pawsitive;
+package com.pawsitive.app;
 
 import android.os.Bundle;
 import android.widget.ImageView;

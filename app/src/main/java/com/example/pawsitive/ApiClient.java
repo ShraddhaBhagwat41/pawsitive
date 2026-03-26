@@ -7,6 +7,8 @@ import android.os.Looper;
 
 import androidx.annotation.NonNull;
 
+import com.pawsitive.app.LoginActivity;
+
 import java.io.IOException;
 
 import okhttp3.Interceptor;
@@ -25,21 +27,20 @@ public class ApiClient {
                         @NonNull
                         @Override
                         public Response intercept(@NonNull Chain chain) throws IOException {
-                            TokenManager tokenManager = TokenManager.getInstance(context);
-                            String token = tokenManager.getToken();
+                            // Get token using wrapper in this package
+                            String token = TokenManager.getToken(chain.request().tag(Context.class) != null
+                                    ? chain.request().tag(Context.class)
+                                    : context);
 
-                            // Initial request with stored token
                             Request.Builder builder = chain.request().newBuilder();
                             if (token != null) {
                                 builder.addHeader("Authorization", "Bearer " + token);
                             }
-                            
+
                             Request request = builder.build();
                             Response response = chain.proceed(request);
 
-                            // If 401 Unauthorized, token might be expired or invalid
                             if (response.code() == 401) {
-                                // Redirect to login as we don't have a refresh mechanism without Firebase yet
                                 redirectToLogin(context);
                             }
 
@@ -53,7 +54,7 @@ public class ApiClient {
 
     private static void redirectToLogin(Context context) {
         new Handler(Looper.getMainLooper()).post(() -> {
-            TokenManager.getInstance(context).clearToken();
+            TokenManager.clearToken(context);
             Intent intent = new Intent(context, LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             context.startActivity(intent);

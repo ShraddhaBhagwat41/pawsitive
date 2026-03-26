@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="@android:color/white">
+
+    <TextView
+        android:id="@+id/tvVerifyTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Verify your email"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvVerifyMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="We have sent a verification link to your email. Please check your inbox."
+        android:textSize="14sp"
+        android:layout_marginBottom="24dp" />
+
+    <Button
+        android:id="@+id/btnResendEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Resend verification email"
+        android:textAllCaps="false"
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/btnGoToLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Go to Login"
+        android:textAllCaps="false" />
+
+</LinearLayout>
