@@ -3,7 +3,10 @@ package com.example.pawsitive;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,6 +15,7 @@ public class WelcomeActivity extends AppCompatActivity {
 
     private Button btnGetStarted;
     private TextView tvLogin;
+    private ImageView ivPawsitiveLogoWelcome;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,6 +25,11 @@ public class WelcomeActivity extends AppCompatActivity {
         // Initialize views
         btnGetStarted = findViewById(R.id.btnGetStarted);
         tvLogin = findViewById(R.id.tvLogin);
+        ivPawsitiveLogoWelcome = findViewById(R.id.ivPawsitiveLogoWelcome);
+
+        // Start pulsing animation on the Pawsitive logo
+        Animation pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.logo_pulse);
+        ivPawsitiveLogoWelcome.startAnimation(pulseAnimation);
 
         // Get Started button click listener
         btnGetStarted.setOnClickListener(new View.OnClickListener() {
