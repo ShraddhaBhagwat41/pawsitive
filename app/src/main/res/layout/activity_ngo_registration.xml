@@ -109,13 +109,29 @@
             android:id="@+id/btnSendForVerification"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Send for Verification"
+            android:text="Sign up"
             android:background="@drawable/btn_rounded_yellow"
             android:textColor="@android:color/white"
             app:layout_constraintTop_toBottomOf="@id/etNgoDescription"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="24dp" />
+
+        <!-- Status Message View -->
+        <TextView
+            android:id="@+id/tvNgoStatusMessage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text=""
+            android:textColor="@color/yellow_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btnSendForVerification" />
 
         <ProgressBar
             android:id="@+id/progressNgo"
@@ -131,4 +147,3 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </ScrollView>
-

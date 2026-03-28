@@ -37,7 +37,8 @@
     <string name="continue_btn">Continue</string>
     <string name="already_have_account_login">Already have an account? <b>Login</b></string>
     <string name="signup_illustration">Signup Illustration</string>
-    
+    <string name="hint_confirm_password">Confirm Password</string>
+
     <!-- Progress Steps -->
     <string name="step_basic">Basic</string>
     <string name="step_profile">Profile</string>

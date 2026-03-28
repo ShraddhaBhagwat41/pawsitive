@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
@@ -33,14 +34,13 @@ public class ResponderAdapter extends RecyclerView.Adapter<ResponderAdapter.Resp
     public void onBindViewHolder(@NonNull ResponderViewHolder holder, int position) {
         Responder responder = responderList.get(position);
 
-        // Set status text and color
         holder.tvStatus.setText(responder.getStatus());
 
-        if (responder.isSent()) {
-            holder.tvStatus.setTextColor(context.getResources().getColor(R.color.green_success));
+        if (responder.isNotified()) {
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.green_success));
             holder.ivStatusIcon.setImageResource(R.drawable.ic_check_green);
         } else {
-            holder.tvStatus.setTextColor(context.getResources().getColor(R.color.blue_pending));
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.blue_pending));
             holder.ivStatusIcon.setImageResource(R.drawable.ic_clock_blue);
         }
     }

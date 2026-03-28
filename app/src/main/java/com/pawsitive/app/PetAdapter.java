@@ -1,14 +1,12 @@
 package com.pawsitive.app;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.app.AlertDialog;
-import android.content.Intent;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -54,6 +52,7 @@ public class PetAdapter extends RecyclerView.Adapter<PetAdapter.PetViewHolder> {
             pet.setFavorite(!pet.isFavorite());
             notifyItemChanged(position);
         });
+        
         // Long press listener
         holder.itemView.setOnLongClickListener(v -> {
             Intent intent = new Intent(context, PetProfileActivity.class);

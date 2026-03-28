@@ -119,8 +119,8 @@ public class LoginActivity extends AppCompatActivity {
                                 return;
                             }
 
-                            // Fetch role from Firestore and redirect
-                            fetchRoleAndRedirect(user.getUid());
+                            // Redirect to HomeActivity as requested
+                            goToHome();
                         } else {
                             String message = task.getException() != null
                                     ? task.getException().getMessage()
@@ -133,59 +133,8 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    private void fetchRoleAndRedirect(String uid) {
-        // First check in users collection (USER role)
-        firestore.collection("users").document(uid)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        // Assume role USER
-                        String role = documentSnapshot.getString("role");
-                        if (role == null || role.equalsIgnoreCase("USER")) {
-                            goToUserHome();
-                        } else if (role.equalsIgnoreCase("NGO")) {
-                            goToNgoHome();
-                        } else {
-                            goToUserHome();
-                        }
-                    } else {
-                        // Not in users, check ngo_profiles
-                        checkNgoProfile(uid);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(LoginActivity.this,
-                            "Failed to fetch role: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                });
-    }
-
-    private void checkNgoProfile(String uid) {
-        firestore.collection("ngo_profiles").document(uid)
-                .get()
-                .addOnSuccessListener((DocumentSnapshot documentSnapshot) -> {
-                    if (documentSnapshot.exists()) {
-                        goToNgoHome();
-                    } else {
-                        // Default to user home if nothing found
-                        goToUserHome();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(LoginActivity.this,
-                            "Failed to fetch NGO profile: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                });
-    }
-
-    private void goToUserHome() {
-        Intent intent = new Intent(LoginActivity.this, UserHomeActivity.class);
-        startActivity(intent);
-        finish();
-    }
-
-    private void goToNgoHome() {
-        Intent intent = new Intent(LoginActivity.this, NGOHomeActivity.class);
+    private void goToHome() {
+        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
         startActivity(intent);
         finish();
     }

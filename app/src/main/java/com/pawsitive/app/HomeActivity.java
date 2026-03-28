@@ -1,17 +1,25 @@
 package com.pawsitive.app;
 
+import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.ItemTouchHelper;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -20,14 +28,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.view.MotionEvent;
-import android.net.Uri;
-import android.app.AlertDialog;
-import android.content.Context;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -44,14 +44,10 @@ public class HomeActivity extends AppCompatActivity {
     private String selectedCategory = "All";
     private SwipeRefreshLayout swipeRefreshLayout;
     
-    private TokenManager tokenManager;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home);
-
-        tokenManager = TokenManager.getInstance(this);
+        setContentView(R.layout.activity_user_home);
 
         // Initialize views
         initializeViews();
@@ -386,8 +382,8 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void logoutUser() {
-        // Clear token from secure storage
-        tokenManager.clearToken();
+        // Correct usage of TokenManager instance
+        TokenManager.getInstance(this).clearToken();
 
         // Navigate back to LoginActivity and clear back stack
         Intent intent = new Intent(HomeActivity.this, LoginActivity.class);

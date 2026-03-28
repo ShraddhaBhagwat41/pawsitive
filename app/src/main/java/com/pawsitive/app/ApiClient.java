@@ -1,4 +1,4 @@
-package com.example.pawsitive;
+package com.pawsitive.app;
 
 import android.content.Context;
 import android.content.Intent;
@@ -6,8 +6,6 @@ import android.os.Handler;
 import android.os.Looper;
 
 import androidx.annotation.NonNull;
-
-import com.pawsitive.app.LoginActivity;
 
 import java.io.IOException;
 
@@ -27,10 +25,9 @@ public class ApiClient {
                         @NonNull
                         @Override
                         public Response intercept(@NonNull Chain chain) throws IOException {
-                            // Get token using wrapper in this package
-                            String token = TokenManager.getToken(chain.request().tag(Context.class) != null
-                                    ? chain.request().tag(Context.class)
-                                    : context);
+                            // Correct usage of TokenManager instance
+                            TokenManager tokenManager = TokenManager.getInstance(context);
+                            String token = tokenManager.getToken();
 
                             Request.Builder builder = chain.request().newBuilder();
                             if (token != null) {
@@ -54,7 +51,7 @@ public class ApiClient {
 
     private static void redirectToLogin(Context context) {
         new Handler(Looper.getMainLooper()).post(() -> {
-            TokenManager.clearToken(context);
+            TokenManager.getInstance(context).clearToken();
             Intent intent = new Intent(context, LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             context.startActivity(intent);

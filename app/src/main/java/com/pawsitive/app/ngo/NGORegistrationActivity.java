@@ -4,10 +4,12 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,6 +17,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -25,6 +28,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.pawsitive.app.R;
+import com.pawsitive.app.VerifyEmailActivity;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,8 +39,9 @@ public class NGORegistrationActivity extends AppCompatActivity {
     private ImageView ivNgoProfilePhoto;
     private Button btnChangeNgoPhoto, btnUploadCertificate, btnSendForVerification;
     private EditText etNgoName, etNgoPhone, etNgoAddress, etNgoLicense, etNgoDescription;
-    private TextView tvCertificateStatus;
+    private TextView tvCertificateStatus, tvNgoStatusMessage;
     private ProgressBar progressNgo;
+    private ScrollView scrollView;
 
     private Uri profilePhotoUri = null;
     private Uri certificateUri = null;
@@ -45,10 +50,10 @@ public class NGORegistrationActivity extends AppCompatActivity {
     private FirebaseFirestore firestore;
     private FirebaseStorage storage;
 
-    private ProgressDialog progressDialog;
-
     private ActivityResultLauncher<String> profilePhotoPicker;
     private ActivityResultLauncher<String> certificatePicker;
+
+    private String email, password;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,12 +65,19 @@ public class NGORegistrationActivity extends AppCompatActivity {
         firestore = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
 
-        // Progress dialog
-        progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage("Submitting application...");
-        progressDialog.setCancelable(false);
+        // Get credentials from previous activities
+        email = getIntent().getStringExtra("email");
+        password = getIntent().getStringExtra("password");
 
         // Bind views
+        scrollView = findViewById(R.id.ivNgoProfilePhoto).getRootView().findViewById(android.R.id.content).findViewWithTag("ngo_scroll"); // Attempt to find if tagged, otherwise get by class
+        // Fallback for getting ScrollView
+        View v = findViewById(R.id.ivNgoProfilePhoto);
+        while (v != null && !(v instanceof ScrollView)) {
+            v = (View) v.getParent();
+        }
+        scrollView = (ScrollView) v;
+
         ivNgoProfilePhoto = findViewById(R.id.ivNgoProfilePhoto);
         btnChangeNgoPhoto = findViewById(R.id.btnChangeNgoPhoto);
         etNgoName = findViewById(R.id.etNgoName);
@@ -76,6 +88,7 @@ public class NGORegistrationActivity extends AppCompatActivity {
         tvCertificateStatus = findViewById(R.id.tvCertificateStatus);
         etNgoDescription = findViewById(R.id.etNgoDescription);
         btnSendForVerification = findViewById(R.id.btnSendForVerification);
+        tvNgoStatusMessage = findViewById(R.id.tvNgoStatusMessage);
         progressNgo = findViewById(R.id.progressNgo);
 
         // Register pickers
@@ -100,67 +113,71 @@ public class NGORegistrationActivity extends AppCompatActivity {
         );
 
         // Click listeners
-        btnChangeNgoPhoto.setOnClickListener(v ->
+        btnChangeNgoPhoto.setOnClickListener(vClick ->
                 profilePhotoPicker.launch("image/*"));
 
-        btnUploadCertificate.setOnClickListener(v ->
+        btnUploadCertificate.setOnClickListener(vClick ->
                 certificatePicker.launch("*/*")); // allow image/pdf
 
-        btnSendForVerification.setOnClickListener(v -> submitApplication());
+        btnSendForVerification.setOnClickListener(vClick -> performSignup());
     }
 
-    private void submitApplication() {
+    private void performSignup() {
         String name = etNgoName.getText().toString().trim();
         String phone = etNgoPhone.getText().toString().trim();
         String address = etNgoAddress.getText().toString().trim();
         String license = etNgoLicense.getText().toString().trim();
-        String description = etNgoDescription.getText().toString().trim();
 
-        if (name.isEmpty()) {
-            etNgoName.setError("NGO name required");
-            etNgoName.requestFocus();
-            return;
-        }
-        if (phone.isEmpty()) {
-            etNgoPhone.setError("Phone required");
-            etNgoPhone.requestFocus();
-            return;
-        }
-        if (address.isEmpty()) {
-            etNgoAddress.setError("Address required");
-            etNgoAddress.requestFocus();
-            return;
-        }
-        if (license.isEmpty()) {
-            etNgoLicense.setError("License number required");
-            etNgoLicense.requestFocus();
-            return;
-        }
-        if (certificateUri == null) {
-            Toast.makeText(this, "Please upload your certificate", Toast.LENGTH_SHORT).show();
+        if (name.isEmpty() || phone.isEmpty() || address.isEmpty() || license.isEmpty() || certificateUri == null) {
+            Toast.makeText(this, "Please fill all required fields and upload certificate", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        FirebaseUser user = auth.getCurrentUser();
-        if (user == null) {
-            Toast.makeText(this, "You must be logged in to submit.", Toast.LENGTH_SHORT).show();
+        if (email == null || password == null) {
+            Toast.makeText(this, "Missing signup credentials", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        progressDialog.show();
-        progressNgo.setVisibility(android.view.View.VISIBLE);
+        progressNgo.setVisibility(View.VISIBLE);
+        tvNgoStatusMessage.setVisibility(View.VISIBLE);
+        tvNgoStatusMessage.setTextColor(ContextCompat.getColor(this, R.color.brown_primary));
+        tvNgoStatusMessage.setText("Creating account...");
         btnSendForVerification.setEnabled(false);
+        scrollToBottom();
 
-        String uid = user.getUid();
+        // Create Firebase account
+        auth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = auth.getCurrentUser();
+                        if (user != null) {
+                            runOnUiThread(() -> {
+                                tvNgoStatusMessage.setText("Account created! Uploading files...");
+                                scrollToBottom();
+                            });
+                            startUploadProcess(user.getUid());
+                        }
+                    } else {
+                        progressNgo.setVisibility(View.GONE);
+                        tvNgoStatusMessage.setTextColor(ContextCompat.getColor(this, R.color.red_primary));
+                        tvNgoStatusMessage.setText("Signup failed: " + task.getException().getMessage());
+                        btnSendForVerification.setEnabled(true);
+                    }
+                });
+    }
 
-        // First upload profile photo (if present), then certificate, then save Firestore
+    private void startUploadProcess(String uid) {
         if (profilePhotoUri != null) {
-            uploadFileToStorage("ngo_profiles/" + uid + "/profile_" + UUID.randomUUID() + ".jpg",
+            uploadFileToStorage("ngo_profiles/" + uid + "/profile.jpg",
                     profilePhotoUri,
                     new StorageCallback() {
                         @Override
                         public void onSuccess(String profileUrl) {
-                            uploadCertificateAndSave(uid, name, phone, address, license, description, profileUrl);
+                            runOnUiThread(() -> {
+                                tvNgoStatusMessage.setText("Profile photo uploaded! Uploading certificate...");
+                                scrollToBottom();
+                            });
+                            uploadCertificateAndSave(uid, profileUrl);
                         }
 
                         @Override
@@ -169,23 +186,27 @@ public class NGORegistrationActivity extends AppCompatActivity {
                         }
                     });
         } else {
-            // No profile photo, just upload certificate
-            uploadCertificateAndSave(uid, name, phone, address, license, description, null);
+            runOnUiThread(() -> tvNgoStatusMessage.setText("Uploading certificate..."));
+            uploadCertificateAndSave(uid, null);
         }
     }
 
-    private void uploadCertificateAndSave(String uid,
-                                          String name,
-                                          String phone,
-                                          String address,
-                                          String license,
-                                          String description,
-                                          String profilePhotoUrl) {
-        uploadFileToStorage("ngo_profiles/" + uid + "/certificate_" + UUID.randomUUID(),
+    private void uploadCertificateAndSave(String uid, String profilePhotoUrl) {
+        String name = etNgoName.getText().toString().trim();
+        String phone = etNgoPhone.getText().toString().trim();
+        String address = etNgoAddress.getText().toString().trim();
+        String license = etNgoLicense.getText().toString().trim();
+        String description = etNgoDescription.getText().toString().trim();
+
+        uploadFileToStorage("ngo_profiles/" + uid + "/certificate",
                 certificateUri,
                 new StorageCallback() {
                     @Override
                     public void onSuccess(String certificateUrl) {
+                        runOnUiThread(() -> {
+                            tvNgoStatusMessage.setText("Files uploaded! Saving NGO profile...");
+                            scrollToBottom();
+                        });
                         saveNgoProfile(uid, name, phone, address, license, description, profilePhotoUrl, certificateUrl);
                     }
 
@@ -199,41 +220,13 @@ public class NGORegistrationActivity extends AppCompatActivity {
     private void uploadFileToStorage(String path, Uri fileUri, StorageCallback callback) {
         StorageReference ref = storage.getReference().child(path);
         ref.putFile(fileUri)
-                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        ref.getDownloadUrl()
-                                .addOnSuccessListener(new OnSuccessListener<Uri>() {
-                                    @Override
-                                    public void onSuccess(Uri uri) {
-                                        callback.onSuccess(uri.toString());
-                                    }
-                                })
-                                .addOnFailureListener(new OnFailureListener() {
-                                    @Override
-                                    public void onFailure(@NonNull Exception e) {
-                                        callback.onFailure(e.getMessage());
-                                    }
-                                });
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(e.getMessage());
-                    }
-                });
+                .addOnSuccessListener(taskSnapshot -> ref.getDownloadUrl()
+                        .addOnSuccessListener(uri -> callback.onSuccess(uri.toString()))
+                        .addOnFailureListener(e -> callback.onFailure(e.getMessage())))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    private void saveNgoProfile(String uid,
-                                String name,
-                                String phone,
-                                String address,
-                                String license,
-                                String description,
-                                String profilePhotoUrl,
-                                String certificateUrl) {
-
+    private void saveNgoProfile(String uid, String name, String phone, String address, String license, String description, String profilePhotoUrl, String certificateUrl) {
         Map<String, Object> data = new HashMap<>();
         data.put("uid", uid);
         data.put("organization_name", name);
@@ -244,29 +237,62 @@ public class NGORegistrationActivity extends AppCompatActivity {
         data.put("profile_photo_url", profilePhotoUrl);
         data.put("certificate_url", certificateUrl);
         data.put("verification_status", "PENDING");
+        data.put("role", "NGO");
 
-        firestore.collection("ngo_profiles")
-                .document(uid)
-                .set(data)
+        firestore.collection("ngo_profiles").document(uid).set(data)
                 .addOnSuccessListener(unused -> {
-                    progressDialog.dismiss();
-                    progressNgo.setVisibility(android.view.View.GONE);
-                    btnSendForVerification.setEnabled(true);
-                    Toast.makeText(NGORegistrationActivity.this,
-                            "Your application has been sent for verification.",
-                            Toast.LENGTH_LONG).show();
-                    finish();
+                    runOnUiThread(() -> {
+                        tvNgoStatusMessage.setText("NGO profile saved! Sending verification email...");
+                        scrollToBottom();
+                    });
+                    sendVerificationEmail();
                 })
-                .addOnFailureListener(e -> {
-                    onUploadFailed(e.getMessage());
-                });
+                .addOnFailureListener(e -> onUploadFailed(e.getMessage()));
+    }
+
+    private void sendVerificationEmail() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user != null) {
+            user.sendEmailVerification()
+                    .addOnCompleteListener(task -> {
+                        progressNgo.setVisibility(View.GONE);
+                        if (task.isSuccessful()) {
+                            runOnUiThread(() -> {
+                                tvNgoStatusMessage.setTextColor(ContextCompat.getColor(this, R.color.green_success));
+                                tvNgoStatusMessage.setText("Email is sent! Please verify your account to continue.");
+                                scrollToBottom();
+                            });
+                            
+                            tvNgoStatusMessage.postDelayed(() -> {
+                                if (!isFinishing()) {
+                                    Intent intent = new Intent(NGORegistrationActivity.this, VerifyEmailActivity.class);
+                                    intent.putExtra("email", email);
+                                    startActivity(intent);
+                                    finishAffinity();
+                                }
+                            }, 4000);
+                        } else {
+                            tvNgoStatusMessage.setTextColor(ContextCompat.getColor(this, R.color.red_primary));
+                            tvNgoStatusMessage.setText("Failed to send verification email: " + task.getException().getMessage());
+                            btnSendForVerification.setEnabled(true);
+                        }
+                    });
+        }
     }
 
     private void onUploadFailed(String error) {
-        progressDialog.dismiss();
-        progressNgo.setVisibility(android.view.View.GONE);
-        btnSendForVerification.setEnabled(true);
-        Toast.makeText(this, "Failed to submit: " + error, Toast.LENGTH_LONG).show();
+        runOnUiThread(() -> {
+            progressNgo.setVisibility(View.GONE);
+            tvNgoStatusMessage.setTextColor(ContextCompat.getColor(this, R.color.red_primary));
+            tvNgoStatusMessage.setText("Error: " + error);
+            btnSendForVerification.setEnabled(true);
+        });
+    }
+
+    private void scrollToBottom() {
+        if (scrollView != null) {
+            scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
+        }
     }
 
     private interface StorageCallback {

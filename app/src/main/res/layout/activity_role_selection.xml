@@ -11,50 +11,115 @@
         android:id="@+id/tvRoleTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Who are you?"
+        android:layout_marginTop="40dp"
+        android:text="Complete Your Profile"
+        android:textColor="@color/gray_dark"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="@color/gray_dark"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="64dp" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvRoleSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Tell us a bit more about yourself"
+        android:textColor="@color/gray_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvRoleTitle" />
+
+    <!-- Adopt a Pet Illustration -->
+    <ImageView
+        android:id="@+id/adopt_a_pet"
+        android:layout_width="286dp"
+        android:layout_height="240dp"
+        android:layout_marginTop="8dp"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_adopt_illustration"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvRoleSubtitle" />
+
+    <!-- Full Name Input -->
+    <EditText
+        android:id="@+id/etFullName"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/input_field_background"
+        android:drawableStart="@drawable/ic_username"
+        android:drawablePadding="12dp"
+        android:hint="Full Name"
+        android:inputType="textPersonName"
+        android:paddingStart="48dp"
+        android:paddingEnd="16dp"
+        android:textColor="@color/gray_dark"
+        android:textColorHint="@color/gray_text"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/adopt_a_pet" />
+
+    <TextView
+        android:id="@+id/tvSelectRoleLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Select your role:"
+        android:textColor="@color/gray_dark"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@id/etFullName"
+        app:layout_constraintTop_toBottomOf="@id/etFullName" />
 
     <RadioGroup
         android:id="@+id/rgRoles"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/tvRoleTitle"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="24dp">
+        android:layout_marginTop="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSelectRoleLabel">
 
         <RadioButton
             android:id="@+id/rbUser"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/input_field_background"
+            android:buttonTint="@color/yellow_primary"
+            android:padding="12dp"
             android:text="User (Animal Lover)" />
 
         <RadioButton
             android:id="@+id/rbNgo"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/input_field_background"
+            android:buttonTint="@color/yellow_primary"
+            android:padding="12dp"
             android:text="NGO / Rescue Organization" />
     </RadioGroup>
 
     <Button
         android:id="@+id/btnContinueRole"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Continue"
-        android:background="@drawable/btn_rounded_yellow"
-        android:textColor="@android:color/white"
-        app:layout_constraintTop_toBottomOf="@id/rgRoles"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_height="56dp"
         android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="24dp" />
+        android:layout_marginTop="24dp"
+        android:background="@drawable/btn_rounded_yellow"
+        android:text="Continue"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rgRoles" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-
