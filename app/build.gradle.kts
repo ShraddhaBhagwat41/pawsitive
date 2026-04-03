@@ -54,6 +54,14 @@ dependencies {
     // Google Play Services Location
     implementation(libs.play.services.location)
 
+    // Glide for image loading
+    implementation(libs.glide)
+
+    // Retrofit for REST API
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.gson)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

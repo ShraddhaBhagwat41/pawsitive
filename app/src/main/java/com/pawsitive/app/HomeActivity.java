@@ -44,6 +44,9 @@ public class HomeActivity extends AppCompatActivity {
     private String selectedCategory = "All";
     private SwipeRefreshLayout swipeRefreshLayout;
     
+    // Track dialogs to prevent window leaks
+    private AlertDialog currentDialog;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +63,15 @@ public class HomeActivity extends AppCompatActivity {
 
         // Setup Swipe Gestures
         setupSwipeGestures();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Dismiss any open dialog to prevent window leak
+        if (currentDialog != null && currentDialog.isShowing()) {
+            currentDialog.dismiss();
+        }
     }
 
     private void initializeViews() {
@@ -307,7 +319,7 @@ public class HomeActivity extends AppCompatActivity {
                 v.animate().scaleX(1f).scaleY(1f).setDuration(80).start();
 
                 // Show emergency options dialog
-                new AlertDialog.Builder(this)
+                currentDialog = new AlertDialog.Builder(this)
                         .setTitle("Emergency Contacts")
                         .setItems(new String[]{
                                 "Animal Helpline - 1962",
@@ -371,7 +383,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private void showProfileMenu() {
         String[] options = {"Logout"};
-        new AlertDialog.Builder(this)
+        currentDialog = new AlertDialog.Builder(this)
                 .setTitle("Profile")
                 .setItems(options, (dialog, which) -> {
                     if (which == 0) {

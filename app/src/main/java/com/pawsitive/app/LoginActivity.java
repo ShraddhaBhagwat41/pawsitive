@@ -10,18 +10,13 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.pawsitive.app.ngo.NGOHomeActivity;
 import com.pawsitive.app.user.UserHomeActivity;
+import com.pawsitive.app.admin.AdminHomeActivity;
+import com.pawsitive.app.network.NetworkManager;
+import com.pawsitive.app.network.ApiService;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -30,17 +25,15 @@ public class LoginActivity extends AppCompatActivity {
     private TextView tvForgotPassword, tvSignup;
     private ProgressBar progressBar;
 
-    private FirebaseAuth mAuth;
-    private FirebaseFirestore firestore;
+    private NetworkManager networkManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Initialize Firebase
-        mAuth = FirebaseAuth.getInstance();
-        firestore = FirebaseFirestore.getInstance();
+        // Initialize Network Manager
+        networkManager = new NetworkManager(this);
 
         // Initialize views
         etEmail = findViewById(R.id.etEmail);
@@ -51,28 +44,17 @@ public class LoginActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
 
         // Login button click listener
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loginUser();
-            }
-        });
+        btnLogin.setOnClickListener(v -> loginUser());
 
         // Forgot Password click listener (placeholder)
-        tvForgotPassword.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(LoginActivity.this, "Forgot Password clicked", Toast.LENGTH_SHORT).show();
-            }
-        });
+        tvForgotPassword.setOnClickListener(v -> 
+            Toast.makeText(LoginActivity.this, "Forgot Password clicked", Toast.LENGTH_SHORT).show()
+        );
 
         // Signup text click listener
-        tvSignup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
-                startActivity(intent);
-            }
+        tvSignup.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
+            startActivity(intent);
         });
     }
 
@@ -95,47 +77,41 @@ public class LoginActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         btnLogin.setEnabled(false);
 
-        mAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        progressBar.setVisibility(View.GONE);
-                        btnLogin.setEnabled(true);
+        // Call REST API for login
+        networkManager.login(email, password, new NetworkManager.ApiCallback<ApiService.LoginResponse>() {
+            @Override
+            public void onSuccess(ApiService.LoginResponse response) {
+                progressBar.setVisibility(View.GONE);
+                btnLogin.setEnabled(true);
+                
+                Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
+                goToHome(response.role);
+            }
 
-                        if (task.isSuccessful()) {
-                            FirebaseUser user = mAuth.getCurrentUser();
-
-                            if (user == null) {
-                                Toast.makeText(LoginActivity.this,
-                                        "Login succeeded but user is null.",
-                                        Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-
-                            if (!user.isEmailVerified()) {
-                                Toast.makeText(LoginActivity.this,
-                                        "Please verify your email before logging in.",
-                                        Toast.LENGTH_LONG).show();
-                                return;
-                            }
-
-                            // Redirect to HomeActivity as requested
-                            goToHome();
-                        } else {
-                            String message = task.getException() != null
-                                    ? task.getException().getMessage()
-                                    : "Login failed";
-                            Toast.makeText(LoginActivity.this,
-                                    "Error: " + message,
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    }
-                });
+            @Override
+            public void onError(String error) {
+                progressBar.setVisibility(View.GONE);
+                btnLogin.setEnabled(true);
+                Toast.makeText(LoginActivity.this, "Login failed: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
-    private void goToHome() {
-        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-        startActivity(intent);
-        finish();
+    private void goToHome(String role) {
+        Intent intent = null;
+        
+        if ("ADMIN".equalsIgnoreCase(role)) {
+            intent = new Intent(LoginActivity.this, AdminHomeActivity.class);
+        } else if ("NGO".equalsIgnoreCase(role)) {
+            intent = new Intent(LoginActivity.this, NGOHomeActivity.class);
+        } else {
+            intent = new Intent(LoginActivity.this, UserHomeActivity.class);
+        }
+        
+        if (intent != null) {
+            startActivity(intent);
+            finish();
+        }
     }
 }
+
