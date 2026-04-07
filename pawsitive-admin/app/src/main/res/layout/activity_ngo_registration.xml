@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:fillViewport="true"
+    tools:context=".ngo.NGORegistrationActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="24dp">
+
+        <!-- Back Button -->
+        <ImageView
+            android:id="@+id/ivBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/ic_back_arrow"
+            android:contentDescription="@string/back_button"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+        <!-- Profile Section -->
+        <LinearLayout
+            android:id="@+id/profileSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/ivBack"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivNgoProfilePhoto"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_profile_placeholder"
+                app:shapeAppearanceOverlay="@style/CircleAppearance"
+                android:padding="2dp"
+                app:strokeColor="@color/yellow_primary"
+                app:strokeWidth="2dp" />
+
+            <Button
+                android:id="@+id/btnChangeNgoPhoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:text="CHANGE PHOTO"
+                android:textSize="12sp"
+                android:textColor="@color/gray_dark"
+                android:backgroundTint="@color/gray_light"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
+        </LinearLayout>
+
+        <!-- Form Section -->
+        <LinearLayout
+            android:id="@+id/formSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/profileSection"
+            android:orientation="vertical">
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/tvNgoTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:text="NGO Registration"
+                android:textColor="@color/gray_dark"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <!-- NGO Name -->
+            <EditText
+                android:id="@+id/etNgoName"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/input_field_background"
+                android:hint="NGO Name"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/gray_dark"
+                android:textColorHint="@color/gray_text"
+                android:textSize="16sp" />
+
+            <!-- Phone Number -->
+            <EditText
+                android:id="@+id/etNgoPhone"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/input_field_background"
+                android:hint="Phone Number"
+                android:inputType="phone"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/gray_dark"
+                android:textColorHint="@color/gray_text"
+                android:textSize="16sp" />
+
+            <!-- Address -->
+            <EditText
+                android:id="@+id/etNgoAddress"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/input_field_background"
+                android:hint="Address"
+                android:inputType="textPostalAddress"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/gray_dark"
+                android:textColorHint="@color/gray_text"
+                android:textSize="16sp" />
+
+            <!-- License Number -->
+            <EditText
+                android:id="@+id/etNgoLicense"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/input_field_background"
+                android:hint="License Number"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/gray_dark"
+                android:textColorHint="@color/gray_text"
+                android:textSize="16sp" />
+
+            <!-- Certificate Upload Button -->
+            <Button
+                android:id="@+id/btnUploadCertificate"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="8dp"
+                android:text="UPLOAD CERTIFICATE (IMAGE/PDF)"
+                android:textAllCaps="true"
+                android:textSize="14sp"
+                android:textColor="@color/gray_dark"
+                android:backgroundTint="@color/gray_light"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
+
+            <!-- Certificate Status -->
+            <TextView
+                android:id="@+id/tvCertificateStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="No certificate selected"
+                android:textColor="@color/gray_text"
+                android:textSize="14sp" />
+
+            <!-- Description -->
+            <EditText
+                android:id="@+id/etNgoDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/input_field_background"
+                android:hint="Description"
+                android:inputType="textMultiLine"
+                android:minLines="3"
+                android:padding="16dp"
+                android:textColor="@color/gray_dark"
+                android:textColorHint="@color/gray_text"
+                android:textSize="16sp" />
+
+            <!-- Sign Up Button -->
+            <Button
+                android:id="@+id/btnSendForVerification"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/btn_rounded_yellow"
+                android:elevation="4dp"
+                android:text="SIGN UP"
+                android:textAllCaps="true"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- Success/Status Message -->
+            <TextView
+                android:id="@+id/tvNgoStatusMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text=""
+                android:textColor="@color/green_success"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                android:layout_marginBottom="24dp" />
+
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressNgo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:visibility="gone"
+            android:indeterminateTint="@color/yellow_primary" />
+
+    </RelativeLayout>
+</ScrollView>
