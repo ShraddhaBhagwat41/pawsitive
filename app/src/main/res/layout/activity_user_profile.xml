@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    tools:context=".user.UserProfileActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="24dp">
+
+        <ImageView
+            android:id="@+id/ivProfilePhoto"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:src="@drawable/ic_profile_placeholder"
+            android:scaleType="centerCrop"
+            android:contentDescription="Profile photo"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <Button
+            android:id="@+id/btnChangePhoto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Change Photo"
+            app:layout_constraintStart_toEndOf="@id/ivProfilePhoto"
+            app:layout_constraintBottom_toBottomOf="@id/ivProfilePhoto"
+            android:layout_marginStart="16dp" />
+
+        <EditText
+            android:id="@+id/etUserFullName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Full Name"
+            app:layout_constraintTop_toBottomOf="@id/ivProfilePhoto"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="24dp" />
+
+        <EditText
+            android:id="@+id/etUserPhone"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Phone Number"
+            android:inputType="phone"
+            app:layout_constraintTop_toBottomOf="@id/etUserFullName"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="12dp" />
+
+        <EditText
+            android:id="@+id/etUserAbout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="About yourself"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            app:layout_constraintTop_toBottomOf="@id/etUserPhone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="12dp" />
+
+        <Button
+            android:id="@+id/btnUseLocation"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Use Current Location"
+            app:layout_constraintTop_toBottomOf="@id/etUserAbout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:id="@+id/tvLocation"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Location: Not set"
+            app:layout_constraintTop_toBottomOf="@id/btnUseLocation"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp" />
+
+        <Button
+            android:id="@+id/btnSaveUserProfile"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Sign up"
+            android:background="@drawable/btn_rounded_yellow"
+            android:textColor="@android:color/white"
+            app:layout_constraintTop_toBottomOf="@id/tvLocation"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="24dp" />
+
+        <!-- Status Message View -->
+        <TextView
+            android:id="@+id/tvStatusMessage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text=""
+            android:textColor="@color/yellow_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btnSaveUserProfile" />
+
+        <ProgressBar
+            android:id="@+id/progressUserProfile"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/yellow_primary"
+        android:padding="16dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tvNgoName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="NGO Dashboard"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white" />
+
+        <ImageView
+            android:id="@+id/ivLogout"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_back_arrow"
+            android:contentDescription="Logout"
+            android:scaleType="centerInside"
+            android:tint="@android:color/white" />
+    </LinearLayout>
+
+    <!-- Verification Status Card -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="6dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Verification Status"
+                android:textSize="12sp"
+                android:textColor="@color/gray_text"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:id="@+id/tvVerificationStatus"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="PENDING"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/brown_primary" />
+
+                <ImageView
+                    android:id="@+id/ivStatusIcon"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_clock_blue"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Status Icon" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvStatusMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Your application is awaiting admin verification. This may take 1-2 business days."
+                android:textSize="13sp"
+                android:textColor="@color/gray_text"
+                android:layout_marginTop="12dp" />
+
+            <TextView
+                android:id="@+id/tvRejectionReason"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="12sp"
+                android:textColor="@color/red_primary"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Content Area -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <Button
+                android:id="@+id/btnPostAnimal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Post Animal"
+                android:background="@drawable/btn_rounded_yellow"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <Button
+                android:id="@+id/btnViewAnimals"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="View My Animals"
+                android:background="@drawable/btn_rounded_yellow"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <Button
+                android:id="@+id/btnManageProfile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Manage Profile"
+                android:background="@drawable/btn_rounded_yellow"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
+</LinearLayout>
