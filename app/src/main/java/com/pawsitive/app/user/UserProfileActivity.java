@@ -34,6 +34,7 @@ import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class UserProfileActivity extends AppCompatActivity {
 
@@ -118,28 +119,25 @@ public class UserProfileActivity extends AppCompatActivity {
 
         // Upload profile photo if selected, then register via API
         if (imageUri != null) {
-            uploadProfilePhoto();
+            uploadProfilePhoto(name, phone);
         } else {
             registerUserViaAPI(name, phone, null);
         }
     }
 
-    private void uploadProfilePhoto() {
-        String path = "user_profiles/" + System.currentTimeMillis() + "/profile.jpg";
-        StorageReference ref = storage.getReference().child(path);
-        
-        ref.putFile(imageUri)
-                .addOnSuccessListener(taskSnapshot -> ref.getDownloadUrl()
-                        .addOnSuccessListener(uri -> {
-                            updateStatus("Photo uploaded! Registering account...", R.color.brown_primary);
-                            registerUserViaAPI(
-                                    etFullName.getText().toString().trim(),
-                                    etPhone.getText().toString().trim(),
-                                    uri.toString()
-                            );
-                        })
-                        .addOnFailureListener(e -> handleError("Photo upload failed: " + e.getMessage())))
-                .addOnFailureListener(e -> handleError("Photo upload failed: " + e.getMessage()));
+    private void uploadProfilePhoto(String name, String phone) {
+        StorageReference profileRef = storage.getReference().child("profiles/" + UUID.randomUUID().toString() + ".jpg");
+
+        profileRef.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    profileRef.getDownloadUrl()
+                            .addOnSuccessListener(downloadUri -> {
+                                tvStatusMessage.setText("Photo uploaded. Registering...");
+                                registerUserViaAPI(name, phone, downloadUri.toString());
+                            })
+                            .addOnFailureListener(e -> handleError("URL Error: " + e.getMessage()));
+                })
+                .addOnFailureListener(e -> handleError("Upload Error: " + e.getMessage()));
     }
 
     private void registerUserViaAPI(String name, String phone, String profilePhotoUrl) {

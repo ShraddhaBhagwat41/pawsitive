@@ -39,6 +39,8 @@
     <string name="signup_illustration">Signup Illustration</string>
     <string name="hint_confirm_password">Confirm Password</string>
 
+    <string name="change_photo">Change Photo</string>
+
     <!-- Progress Steps -->
     <string name="step_basic">Basic</string>
     <string name="step_profile">Profile</string>

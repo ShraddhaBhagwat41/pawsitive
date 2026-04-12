@@ -146,6 +146,16 @@
                 android:textColor="@android:color/white"
                 android:textStyle="bold"
                 android:layout_marginBottom="12dp" />
+
+            <Button
+                android:id="@+id/btnAddStaff"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Add NGO Staff"
+                android:background="@drawable/btn_rounded_yellow"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
         </LinearLayout>
     </ScrollView>
 

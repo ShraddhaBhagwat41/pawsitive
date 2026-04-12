@@ -15,12 +15,13 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.Pawsitive"
         android:networkSecurityConfig="@xml/network_security_config">
 
-        <!-- Welcome Activity - Launch Screen -->
+        <!-- Welcome Activity - Launcher Activity -->
         <activity
-            android:name=".WelcomeActivity"
+            android:name="com.pawsitive.app.WelcomeActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -29,51 +30,58 @@
             </intent-filter>
         </activity>
 
+        <!-- Admin Dashboard Activity -->
+        <activity
+            android:name="com.pawsitive.app.admin.AdminHomeActivity"
+            android:exported="false" />
+
+        <!-- Admin NGO Detail Activity -->
+        <activity
+            android:name="com.pawsitive.app.admin.AdminNGODetailActivity"
+            android:exported="true" />
+
         <!-- Main Activity -->
         <activity
-            android:name=".MainActivity"
+            android:name="com.pawsitive.app.MainActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
         <!-- Login Activity -->
         <activity
-            android:name=".LoginActivity"
+            android:name="com.pawsitive.app.LoginActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
         <!-- Signup Activity -->
         <activity
-            android:name=".SignupActivity"
+            android:name="com.pawsitive.app.SignupActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
         <!-- Report Animal Activity -->
         <activity
-            android:name=".ReportAnimalActivity"
+            android:name="com.pawsitive.app.ReportAnimalActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
         <!-- Home Activity -->
         <activity
-            android:name=".HomeActivity"
+            android:name="com.pawsitive.app.HomeActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <activity android:name=".PetProfileActivity" />
+        <!-- Pet Profile Activity -->
+        <activity android:name="com.pawsitive.app.PetProfileActivity" />
 
         <!-- New auth/registration activities -->
-        <activity android:name=".auth.RoleSelectionActivity" />
-        <activity android:name=".user.UserProfileActivity" />
-        <activity android:name=".ngo.NGORegistrationActivity" />
-        <activity android:name=".user.UserHomeActivity" />
-        <activity android:name=".ngo.NGOHomeActivity" />
-
-        <!-- Admin Activities -->
-        <activity android:name=".admin.AdminHomeActivity" />
-        <activity android:name=".admin.AdminNGOVerificationActivity" />
+        <activity android:name="com.pawsitive.app.auth.RoleSelectionActivity" />
+        <activity android:name="com.pawsitive.app.user.UserProfileActivity" />
+        <activity android:name="com.pawsitive.app.ngo.NGORegistrationActivity" />
+        <activity android:name="com.pawsitive.app.user.UserHomeActivity" />
+        <activity android:name="com.pawsitive.app.ngo.NGOHomeActivity" />
 
         <!-- Email Verification Activity -->
-        <activity android:name=".VerifyEmailActivity" />
+        <activity android:name="com.pawsitive.app.VerifyEmailActivity" />
 
     </application>
 

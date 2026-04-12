@@ -20,10 +20,9 @@ try {
     } else {
         // Fallback: Initialize with just the project ID (works if running in Google Cloud or with ambient credentials)
         const serviceAccount = require('./serviceAccountKey.json');
-        const projectId = process.env.FIREBASE_PROJECT_ID || serviceAccount.project_id;
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
-            databaseURL: `https://${projectId}.firebaseio.com`
+            databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
         });
     }
     console.log('Firebase Admin SDK initialized successfully');
@@ -745,22 +744,25 @@ app.post('/api/ngo/register', async (req, res) => {
             });
             console.log('✓ Firebase NGO user created successfully:', userRecord.uid);
         } catch (authError) {
-            console.error('❌ Firebase Auth Error (NGO) Details:');
+            console.error('✗ Firebase Auth Error (NGO) Details:');
             console.error('   Error Code:', authError.code);
             console.error('   Error Message:', authError.message);
-            console.error('   Full Error:', JSON.stringify(authError, null, 2));
-            
-            if (authError.code === 'auth/email-already-exists' || authError.message.includes('email-already-exists')) {
-                return res.status(400).json({ error: 'Email already registered in Firebase' });
-            }
-            if (authError.code === 'auth/invalid-email') {
+            // Ignore email already exists since client might create it first
+            if (authError.code === 'auth/email-already-exists' || (authError.message && authError.message.includes('email-already-exists'))) {
+                console.log('User already exists, looking up by email...');
+                try {
+                    userRecord = await auth.getUserByEmail(email);
+                    console.log('✓ Found existing user:', userRecord.uid);
+                } catch (lookupError) {
+                    return res.status(400).json({ error: 'Email already registered but lookup failed' });
+                }
+            } else if (authError.code === 'auth/invalid-email') {
                 return res.status(400).json({ error: 'Invalid email format' });
-            }
-            if (authError.code === 'auth/weak-password') {
+            } else if (authError.code === 'auth/weak-password') {
                 return res.status(400).json({ error: 'Password is too weak' });
+            } else {
+                throw authError; // unexpected auth error
             }
-            
-            throw authError;
         }
 
         // Create NGO profile document (only include defined fields)
@@ -795,6 +797,200 @@ app.post('/api/ngo/register', async (req, res) => {
             error: 'Registration failed: ' + error.message,
             details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
+    }
+});
+
+// Add NGO Staff
+app.post('/api/ngo/staff', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'NGO') {
+            return res.status(403).json({ error: 'Only NGOs can add staff' });
+        }
+
+        const { email, password, full_name, phone, staff_role, status } = req.body;
+        if (!email || !password || !full_name || !staff_role) {
+            return res.status(400).json({ error: 'Missing required fields: email, password, full_name, or staff_role' });
+        }
+
+        const ngoRef = db.collection('ngo_profiles').doc(req.user.uid);
+        const ngoDoc = await ngoRef.get();
+
+        if (!ngoDoc.exists) {
+            return res.status(404).json({ error: 'NGO profile not found' });
+        }
+
+        const ngoData = ngoDoc.data();
+
+        let userAuthData = {
+            email,
+            password,
+            displayName: full_name
+        };
+
+        if (phone && phone.trim().length > 0) {
+            // Check if phone matches E.164 roughly. If not, don't pass it to Auth to avoid rejection.
+            if (phone.startsWith('+')) {
+                userAuthData.phoneNumber = phone;
+            }
+        }
+
+        let userRecord;
+        try {
+            userRecord = await auth.createUser(userAuthData);
+        } catch (authError) {
+            if (authError.code === 'auth/email-already-exists') {
+                return res.status(400).json({ error: 'Email already registered in Firebase' });
+            }
+            throw authError;
+        }
+
+        const createdAt = admin.firestore.FieldValue.serverTimestamp();
+
+        const userProfileData = {
+            uid: userRecord.uid,
+            full_name,
+            email,
+            phone: phone || null,
+            profile_photo_url: null,
+            role: 'STAFF',
+            ngo_id: req.user.uid,
+            ngo_name: ngoData.organization_name,
+            created_at: createdAt
+        };
+
+        const ngoStaffData = {
+            uid: userRecord.uid,
+            full_name,
+            email,
+            phone: phone || null,
+            role: staff_role,
+            status: status || 'active',
+            ngo_id: req.user.uid,
+            ngo_name: ngoData.organization_name,
+            created_at: createdAt
+        };
+
+        // Add to users table for app login
+        await db.collection('users').doc(userRecord.uid).set(userProfileData);
+        // Add to separate ngo_staff collection for NGO management
+        await db.collection('ngo_staff').doc(userRecord.uid).set(ngoStaffData);
+
+        res.json({
+            success: true,
+            message: 'Staff added successfully',
+            uid: userRecord.uid
+        });
+
+    } catch(error) {
+        console.error('Add Staff Error:', error);
+        res.status(500).json({ error: 'Failed to add staff: ' + error.message });
+    }
+});
+
+// List NGO Staff
+app.get('/api/ngo/staff', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'NGO') {
+            return res.status(403).json({ error: 'Only NGOs can view their staff' });
+        }
+
+        const staffsSnapshot = await db.collection('ngo_staff').where('ngo_id', '==', req.user.uid).get();
+        const staffList = [];
+
+        staffsSnapshot.forEach(doc => {
+            staffList.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+
+        res.json({ success: true, data: staffList });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update NGO Staff
+app.put('/api/ngo/staff/:id', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'NGO') {
+            return res.status(403).json({ error: 'Only NGOs can manage staff' });
+        }
+
+        const staffId = req.params.id;
+        const { staff_role, role, status, phone } = req.body;
+
+        const staffRef = db.collection('ngo_staff').doc(staffId);
+        const staffDoc = await staffRef.get();
+
+        if (!staffDoc.exists || staffDoc.data().ngo_id !== req.user.uid) {
+            return res.status(404).json({ error: 'Staff not found' });
+        }
+
+        const updates = {};
+        if (staff_role || role) updates.role = staff_role || role;
+        if (status) updates.status = status;
+        if (phone) updates.phone = phone;
+
+        if (Object.keys(updates).length > 0) {
+            await staffRef.update(updates);
+
+            // Sync specific fields to users if applicable
+            const userUpdates = {};
+            if (phone) userUpdates.phone = phone;
+
+            if (Object.keys(userUpdates).length > 0) {
+                await db.collection('users').doc(staffId).update(userUpdates);
+                try {
+                    await auth.updateUser(staffId, { phoneNumber: phone });
+                } catch(e) {
+                   console.log("Error updating Auth phone", e);
+                }
+            }
+
+            if (status === 'inactive') {
+                await auth.updateUser(staffId, { disabled: true });
+            } else if (status === 'active') {
+                await auth.updateUser(staffId, { disabled: false });
+            }
+        }
+
+        res.json({ success: true, message: 'Staff updated successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete NGO Staff
+app.delete('/api/ngo/staff/:id', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'NGO') {
+            return res.status(403).json({ error: 'Only NGOs can remove staff' });
+        }
+
+        const staffId = req.params.id;
+
+        const staffRef = db.collection('ngo_staff').doc(staffId);
+        const staffDoc = await staffRef.get();
+
+        if (!staffDoc.exists || staffDoc.data().ngo_id !== req.user.uid) {
+            return res.status(404).json({ error: 'Staff not found' });
+        }
+
+        // Delete from Firestore
+        await staffRef.delete();
+        await db.collection('users').doc(staffId).delete();
+
+        // Delete from Firebase Auth
+        try {
+            await auth.deleteUser(staffId);
+        } catch (authErr) {
+            console.warn('Could not delete from auth (might already be deleted):', authErr.message);
+        }
+
+        res.json({ success: true, message: 'Staff removed successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -851,26 +1047,22 @@ app.post('/api/user/register', async (req, res) => {
             console.error('   Error Message:', authError.message);
             console.error('   Full Error:', JSON.stringify(authError, null, 2));
             
-            // Log the auth object state
-            try {
-                const userByEmail = await auth.getUserByEmail(email);
-                console.warn('⚠️  User already exists with this email:', userByEmail.uid);
-                return res.status(400).json({ error: 'Email already registered in Firebase' });
-            } catch (checkError) {
-                console.error('User check error:', checkError.message);
-            }
-            
-            if (authError.code === 'auth/email-already-exists' || authError.message.includes('email-already-exists')) {
-                return res.status(400).json({ error: 'Email already in use' });
-            }
-            if (authError.code === 'auth/invalid-email') {
+            // Ignore email already exists since client might create it first
+            if (authError.code === 'auth/email-already-exists' || (authError.message && authError.message.includes('email-already-exists'))) {
+                console.log('User already exists, looking up by email...');
+                try {
+                    userRecord = await auth.getUserByEmail(email);
+                    console.log('✓ Found existing user:', userRecord.uid);
+                } catch (lookupError) {
+                    return res.status(400).json({ error: 'Email already registered but lookup failed' });
+                }
+            } else if (authError.code === 'auth/invalid-email') {
                 return res.status(400).json({ error: 'Invalid email format' });
-            }
-            if (authError.code === 'auth/weak-password') {
+            } else if (authError.code === 'auth/weak-password') {
                 return res.status(400).json({ error: 'Password is too weak. Use at least 6 characters with mixed case.' });
+            } else {
+                throw authError; // unexpected auth error
             }
-            
-            throw authError;
         }
 
         // Create user profile document (only include defined fields)

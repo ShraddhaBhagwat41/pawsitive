@@ -797,6 +797,192 @@ app.post('/api/ngo/register', async (req, res) => {
     }
 });
 
+// Add NGO Staff
+app.post('/api/ngo/staff', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'NGO') {
+            return res.status(403).json({ error: 'Only NGOs can add staff' });
+        }
+
+        const { email, password, full_name, phone, staff_role, status } = req.body;
+        if (!email || !password || !full_name || !staff_role) {
+            return res.status(400).json({ error: 'Missing required fields: email, password, full_name, or staff_role' });
+        }
+
+        const ngoRef = db.collection('ngo_profiles').doc(req.user.uid);
+        const ngoDoc = await ngoRef.get();
+
+        if (!ngoDoc.exists) {
+            return res.status(404).json({ error: 'NGO profile not found' });
+        }
+
+        const ngoData = ngoDoc.data();
+
+        let userRecord;
+        try {
+            userRecord = await auth.createUser({
+                email,
+                password,
+                displayName: full_name,
+                phoneNumber: phone || undefined
+            });
+        } catch (authError) {
+            if (authError.code === 'auth/email-already-exists') {
+                return res.status(400).json({ error: 'Email already registered in Firebase' });
+            }
+            throw authError;
+        }
+
+        const createdAt = admin.firestore.FieldValue.serverTimestamp();
+
+        const userProfileData = {
+            uid: userRecord.uid,
+            full_name,
+            email,
+            phone: phone || null,
+            profile_photo_url: null,
+            role: 'STAFF',
+            ngo_id: req.user.uid,
+            ngo_name: ngoData.organization_name,
+            created_at: createdAt
+        };
+
+        const ngoStaffData = {
+            uid: userRecord.uid,
+            full_name,
+            email,
+            phone: phone || null,
+            role: staff_role,
+            status: status || 'active',
+            ngo_id: req.user.uid,
+            ngo_name: ngoData.organization_name,
+            created_at: createdAt
+        };
+
+        // Add to users table for app login
+        await db.collection('users').doc(userRecord.uid).set(userProfileData);
+        // Add to separate ngo_staff collection for NGO management
+        await db.collection('ngo_staff').doc(userRecord.uid).set(ngoStaffData);
+
+        res.json({
+            success: true,
+            message: 'Staff added successfully',
+            uid: userRecord.uid
+        });
+
+    } catch(error) {
+        console.error('Add Staff Error:', error);
+        res.status(500).json({ error: 'Failed to add staff: ' + error.message });
+    }
+});
+
+// List NGO Staff
+app.get('/api/ngo/staff', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'NGO') {
+            return res.status(403).json({ error: 'Only NGOs can view their staff' });
+        }
+
+        const staffsSnapshot = await db.collection('ngo_staff').where('ngo_id', '==', req.user.uid).get();
+        const staffList = [];
+
+        staffsSnapshot.forEach(doc => {
+            staffList.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+
+        res.json({ success: true, data: staffList });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update NGO Staff
+app.put('/api/ngo/staff/:id', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'NGO') {
+            return res.status(403).json({ error: 'Only NGOs can manage staff' });
+        }
+
+        const staffId = req.params.id;
+        const { staff_role, role, status, phone } = req.body;
+
+        const staffRef = db.collection('ngo_staff').doc(staffId);
+        const staffDoc = await staffRef.get();
+
+        if (!staffDoc.exists || staffDoc.data().ngo_id !== req.user.uid) {
+            return res.status(404).json({ error: 'Staff not found' });
+        }
+
+        const updates = {};
+        if (staff_role || role) updates.role = staff_role || role;
+        if (status) updates.status = status;
+        if (phone) updates.phone = phone;
+
+        if (Object.keys(updates).length > 0) {
+            await staffRef.update(updates);
+
+            // Sync specific fields to users if applicable
+            const userUpdates = {};
+            if (phone) userUpdates.phone = phone;
+
+            if (Object.keys(userUpdates).length > 0) {
+                await db.collection('users').doc(staffId).update(userUpdates);
+                try {
+                    await auth.updateUser(staffId, { phoneNumber: phone });
+                } catch(e) {
+                   console.log("Error updating Auth phone", e);
+                }
+            }
+
+            if (status === 'inactive') {
+                await auth.updateUser(staffId, { disabled: true });
+            } else if (status === 'active') {
+                await auth.updateUser(staffId, { disabled: false });
+            }
+        }
+
+        res.json({ success: true, message: 'Staff updated successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete NGO Staff
+app.delete('/api/ngo/staff/:id', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'NGO') {
+            return res.status(403).json({ error: 'Only NGOs can remove staff' });
+        }
+
+        const staffId = req.params.id;
+
+        const staffRef = db.collection('ngo_staff').doc(staffId);
+        const staffDoc = await staffRef.get();
+
+        if (!staffDoc.exists || staffDoc.data().ngo_id !== req.user.uid) {
+            return res.status(404).json({ error: 'Staff not found' });
+        }
+
+        // Delete from Firestore
+        await staffRef.delete();
+        await db.collection('users').doc(staffId).delete();
+
+        // Delete from Firebase Auth
+        try {
+            await auth.deleteUser(staffId);
+        } catch (authErr) {
+            console.warn('Could not delete from auth (might already be deleted):', authErr.message);
+        }
+
+        res.json({ success: true, message: 'Staff removed successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Register User
 app.post('/api/user/register', async (req, res) => {
     try {

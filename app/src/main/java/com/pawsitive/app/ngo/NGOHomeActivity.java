@@ -20,7 +20,7 @@ public class NGOHomeActivity extends AppCompatActivity {
 
     private TextView tvVerificationStatus, tvStatusMessage, tvRejectionReason, tvNgoName;
     private ImageView ivStatusIcon, ivLogout;
-    private Button btnPostAnimal, btnViewAnimals, btnManageProfile;
+    private Button btnPostAnimal, btnViewAnimals, btnManageProfile, btnAddStaff;
     private ProgressBar progressBar;
 
     private NetworkManager networkManager;
@@ -44,6 +44,7 @@ public class NGOHomeActivity extends AppCompatActivity {
         btnPostAnimal = findViewById(R.id.btnPostAnimal);
         btnViewAnimals = findViewById(R.id.btnViewAnimals);
         btnManageProfile = findViewById(R.id.btnManageProfile);
+        btnAddStaff = findViewById(R.id.btnAddStaff);
 
         // Setup logout
         ivLogout.setOnClickListener(v -> logout());
@@ -52,6 +53,7 @@ public class NGOHomeActivity extends AppCompatActivity {
         btnPostAnimal.setOnClickListener(v -> Toast.makeText(this, "Post Animal - Coming Soon", Toast.LENGTH_SHORT).show());
         btnViewAnimals.setOnClickListener(v -> Toast.makeText(this, "View Animals - Coming Soon", Toast.LENGTH_SHORT).show());
         btnManageProfile.setOnClickListener(v -> Toast.makeText(this, "Manage Profile - Coming Soon", Toast.LENGTH_SHORT).show());
+        btnAddStaff.setOnClickListener(v -> startActivity(new Intent(NGOHomeActivity.this, StaffListActivity.class)));
 
         // Load NGO status
         loadNgoStatus();
@@ -65,12 +67,18 @@ public class NGOHomeActivity extends AppCompatActivity {
             @Override
             public void onSuccess(ApiService.NGOResponse ngo) {
                 progressBar.setVisibility(View.GONE);
+                if (ngo == null || ngo.data == null) {
+                    Toast.makeText(NGOHomeActivity.this, "No NGO profile found", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                ApiService.NGOResponse.NGOData data = ngo.data;
 
                 // Set NGO name
-                tvNgoName.setText(ngo.organization_name + " Dashboard");
+                tvNgoName.setText((data.organization_name != null ? data.organization_name : "NGO") + " Dashboard");
 
                 // Set verification status
-                String status = ngo.verification_status;
+                String status = data.verification_status != null ? data.verification_status : "PENDING";
                 tvVerificationStatus.setText(status);
 
                 switch (status) {
@@ -89,7 +97,7 @@ public class NGOHomeActivity extends AppCompatActivity {
                         break;
 
                     case "REJECTED":
-                        String reason = ngo.rejection_reason;
+                        String reason = data.rejection_reason;
                         tvStatusMessage.setText("✗ Your application has been rejected.");
                         tvRejectionReason.setVisibility(View.VISIBLE);
                         tvRejectionReason.setText("Reason: " + (reason != null && !reason.isEmpty() ? reason : "Not specified"));
@@ -112,11 +120,13 @@ public class NGOHomeActivity extends AppCompatActivity {
         btnPostAnimal.setEnabled(enabled);
         btnViewAnimals.setEnabled(enabled);
         btnManageProfile.setEnabled(enabled);
+        btnAddStaff.setEnabled(enabled);
 
         if (!enabled) {
             btnPostAnimal.setAlpha(0.5f);
             btnViewAnimals.setAlpha(0.5f);
             btnManageProfile.setAlpha(0.5f);
+            btnAddStaff.setAlpha(0.5f);
         }
     }
 

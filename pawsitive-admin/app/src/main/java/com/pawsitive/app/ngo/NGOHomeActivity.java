@@ -65,12 +65,14 @@ public class NGOHomeActivity extends AppCompatActivity {
             @Override
             public void onSuccess(ApiService.NGOResponse ngo) {
                 progressBar.setVisibility(View.GONE);
+                if (ngo == null || ngo.data == null) {
+                    Toast.makeText(NGOHomeActivity.this, "Invalid NGO data", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                // Set NGO name
-                tvNgoName.setText(ngo.organization_name + " Dashboard");
-
-                // Set verification status
-                String status = ngo.verification_status;
+                ApiService.NGOResponse.NGOData data = ngo.data;
+                tvNgoName.setText((data.organization_name != null ? data.organization_name : "NGO") + " Dashboard");
+                String status = data.verification_status != null ? data.verification_status : "UNKNOWN";
                 tvVerificationStatus.setText(status);
 
                 switch (status) {
@@ -78,6 +80,7 @@ public class NGOHomeActivity extends AppCompatActivity {
                         tvStatusMessage.setText("Your application is awaiting admin verification. This may take 1-2 business days.");
                         ivStatusIcon.setImageResource(R.drawable.ic_clock_blue);
                         tvVerificationStatus.setTextColor(getResources().getColor(R.color.blue_pending));
+                        tvRejectionReason.setVisibility(View.GONE);
                         enableButtons(false);
                         break;
 
@@ -85,11 +88,12 @@ public class NGOHomeActivity extends AppCompatActivity {
                         tvStatusMessage.setText("✓ Your NGO has been verified! You can now start using all features.");
                         ivStatusIcon.setImageResource(R.drawable.ic_check_green);
                         tvVerificationStatus.setTextColor(getResources().getColor(R.color.green_success));
+                        tvRejectionReason.setVisibility(View.GONE);
                         enableButtons(true);
                         break;
 
                     case "REJECTED":
-                        String reason = ngo.rejection_reason;
+                        String reason = data.rejection_reason;
                         tvStatusMessage.setText("✗ Your application has been rejected.");
                         tvRejectionReason.setVisibility(View.VISIBLE);
                         tvRejectionReason.setText("Reason: " + (reason != null && !reason.isEmpty() ? reason : "Not specified"));
@@ -117,6 +121,10 @@ public class NGOHomeActivity extends AppCompatActivity {
             btnPostAnimal.setAlpha(0.5f);
             btnViewAnimals.setAlpha(0.5f);
             btnManageProfile.setAlpha(0.5f);
+        } else {
+            btnPostAnimal.setAlpha(1f);
+            btnViewAnimals.setAlpha(1f);
+            btnManageProfile.setAlpha(1f);
         }
     }
 

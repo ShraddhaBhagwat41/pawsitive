@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import com.pawsitive.app.ApiClient;
+import com.pawsitive.app.TokenManager;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
@@ -21,15 +22,11 @@ public class NetworkManager {
     }
 
     private final ApiService apiService;
+    private final TokenManager tokenManager;
 
     public NetworkManager(Context context) {
         OkHttpClient client = ApiClient.getClient(context);
-
-        // When running on a physical device with ADB reverse, use localhost:3000
-        String baseUrl = "http://localhost:3000";
-        if (!baseUrl.endsWith("/")) {
-            baseUrl = baseUrl + "/";
-        }
+        String baseUrl = "http://10.143.57.191:3000/";
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(baseUrl)
@@ -38,6 +35,7 @@ public class NetworkManager {
                 .build();
 
         apiService = retrofit.create(ApiService.class);
+        tokenManager = TokenManager.getInstance(context);
     }
 
     public void login(String email, String password, ApiCallback<ApiService.LoginResponse> callback) {
@@ -50,6 +48,7 @@ public class NetworkManager {
             public void onResponse(@NonNull Call<ApiService.LoginResponse> call,
                                    @NonNull Response<ApiService.LoginResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    tokenManager.saveToken(response.body().token);
                     callback.onSuccess(response.body());
                 } else {
                     callback.onError("Login failed: " + response.code());
@@ -84,7 +83,7 @@ public class NetworkManager {
     }
 
     public void getNGOProfile(ApiCallback<ApiService.NGOResponse> callback) {
-        apiService.getNGOProfile().enqueue(new Callback<ApiService.NGOResponse>() {
+        apiService.getNGOProfile("Bearer " + tokenManager.getToken()).enqueue(new Callback<ApiService.NGOResponse>() {
             @Override
             public void onResponse(@NonNull Call<ApiService.NGOResponse> call,
                                    @NonNull Response<ApiService.NGOResponse> response) {
@@ -122,12 +121,97 @@ public class NetworkManager {
         });
     }
 
+    public void getAllNGOs(ApiCallback<ApiService.NGOListResponse> callback) {
+        apiService.getAllNGOs("Bearer " + tokenManager.getToken()).enqueue(new Callback<ApiService.NGOListResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiService.NGOListResponse> call,
+                                   @NonNull Response<ApiService.NGOListResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Failed to load NGOs: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiService.NGOListResponse> call, @NonNull Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    public void getAdminStats(ApiCallback<ApiService.AdminStatsResponse> callback) {
+        apiService.getAdminStats("Bearer " + tokenManager.getToken()).enqueue(new Callback<ApiService.AdminStatsResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiService.AdminStatsResponse> call,
+                                   @NonNull Response<ApiService.AdminStatsResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Failed to load stats: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiService.AdminStatsResponse> call, @NonNull Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    public void approveNGO(String id, String notes, ApiCallback<ApiService.BasicResponse> callback) {
+        apiService.approveNGO("Bearer " + tokenManager.getToken(), id, new ApiService.ApproveRequest(notes)).enqueue(new Callback<ApiService.BasicResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiService.BasicResponse> call,
+                                   @NonNull Response<ApiService.BasicResponse> response) {
+                if (response.isSuccessful() && response.body() != null) callback.onSuccess(response.body());
+                else callback.onError("Failed to approve NGO: " + response.code());
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiService.BasicResponse> call, @NonNull Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    public void rejectNGO(String id, String reason, ApiCallback<ApiService.BasicResponse> callback) {
+        apiService.rejectNGO("Bearer " + tokenManager.getToken(), id, new ApiService.RejectRequest(reason)).enqueue(new Callback<ApiService.BasicResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiService.BasicResponse> call,
+                                   @NonNull Response<ApiService.BasicResponse> response) {
+                if (response.isSuccessful() && response.body() != null) callback.onSuccess(response.body());
+                else callback.onError("Failed to reject NGO: " + response.code());
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiService.BasicResponse> call, @NonNull Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    public void addStaff(String email, String password, String name, String phone, ApiCallback<ApiService.BasicResponse> callback) {
+        ApiService.AddStaffRequest request = new ApiService.AddStaffRequest(email, password, name, phone);
+        apiService.addStaff("Bearer " + tokenManager.getToken(), request).enqueue(new Callback<ApiService.BasicResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiService.BasicResponse> call,
+                                   @NonNull Response<ApiService.BasicResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Failed to add staff: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiService.BasicResponse> call, @NonNull Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
     public void clearAuth() {
-        // Clear any stored auth token using ApiClient / TokenManager if needed
-        // For now, nothing extra is required here because ApiClient reads token per request.
+        tokenManager.clearToken();
     }
 }
-
-
-
-

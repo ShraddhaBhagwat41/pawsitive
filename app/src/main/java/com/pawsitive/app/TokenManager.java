@@ -2,10 +2,6 @@ package com.pawsitive.app;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import androidx.security.crypto.EncryptedSharedPreferences;
-import androidx.security.crypto.MasterKeys;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 
 public class TokenManager {
     private static final String PREF_NAME = "secure_prefs";
@@ -15,15 +11,9 @@ public class TokenManager {
 
     private TokenManager(Context context) {
         try {
-            String masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC);
-            sharedPreferences = EncryptedSharedPreferences.create(
-                    PREF_NAME,
-                    masterKeyAlias,
-                    context,
-                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            );
-        } catch (GeneralSecurityException | IOException e) {
+            // Using standard SharedPreferences to avoid device-specific EncryptedSharedPreferences bugs
+            sharedPreferences = context.getApplicationContext().getSharedPreferences(PREF_NAME + "_fallback", Context.MODE_PRIVATE);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -36,15 +26,22 @@ public class TokenManager {
     }
 
     public void saveToken(String token) {
-        sharedPreferences.edit().putString(KEY_TOKEN, token).apply();
+        if (sharedPreferences != null) {
+            sharedPreferences.edit().putString(KEY_TOKEN, token).apply();
+        }
     }
 
     public String getToken() {
-        return sharedPreferences.getString(KEY_TOKEN, null);
+        if (sharedPreferences != null) {
+            return sharedPreferences.getString(KEY_TOKEN, null);
+        }
+        return null;
     }
 
     public void clearToken() {
-        sharedPreferences.edit().remove(KEY_TOKEN).apply();
+        if (sharedPreferences != null) {
+            sharedPreferences.edit().remove(KEY_TOKEN).apply();
+        }
     }
 
     public boolean isTokenValid() {
