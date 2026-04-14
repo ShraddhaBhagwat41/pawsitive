@@ -1,3 +1,16 @@
+                            Toast.makeText(context, "NGO rejected", Toast.LENGTH_SHORT).show();
+        holder.btnApprove.setOnClickListener(v -> {
+            if (clickListener != null) clickListener.onNgoClicked(ngo);
+        });
+
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.yellow_dark));
+        } else if ("REJECTED".equals(status)) {
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.red_primary));
+
+        // Handle verified/rejected visibility
+        if ("VERIFIED".equals(status)) {
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.green_success));
+        String status = ngo.verification_status == null ? "PENDING" : ngo.verification_status.toUpperCase();
 package com.pawsitive.app.admin;
 
 import android.app.AlertDialog;
@@ -11,6 +24,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.pawsitive.app.R;
@@ -45,51 +60,36 @@ public class NGOListAdapter extends RecyclerView.Adapter<NGOListAdapter.ViewHold
         this.networkManager = networkManager;
         this.clickListener = clickListener;
         this.changeListener = changeListener;
-    }
+                "Phone: " + safe(ngo.phone) + "\n" +
+                "License: " + safe(ngo.license_number) + "\n" +
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        String status = ngo.verification_status == null ? "PENDING" : ngo.verification_status;
         View view = LayoutInflater.from(context).inflate(R.layout.item_ngo_verification, parent, false);
-        return new ViewHolder(view);
-    }
-
-    @Override
+        if ("VERIFIED".equalsIgnoreCase(status)) {
+            holder.tvStatus.setTextColor(context.getResources().getColor(R.color.green_success));
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        ApiService.NGOProfile ngo = ngos.get(position);
-        holder.tvNgoName.setText(ngo.organization_name != null ? ngo.organization_name : "NGO");
+            holder.btnReject.setVisibility(View.GONE);
+        } else if ("REJECTED".equalsIgnoreCase(status)) {
         holder.tvNgoEmail.setText(ngo.ngo_email != null ? ngo.ngo_email : "");
         holder.tvNgoDetails.setText(
-                "Phone: " + safe(ngo.phone) + "\n" +
-                "License: " + safe(ngo.license_number) + "\n" +
+            holder.btnReject.setVisibility(View.GONE);
                 "Address: " + safe(ngo.address)
         );
 
-        String status = ngo.verification_status == null ? "PENDING" : ngo.verification_status;
+        String status = ngo.verification_status == null ? "PENDING" : ngo.verification_status.toUpperCase();
         holder.tvStatus.setText(status);
-        if ("VERIFIED".equalsIgnoreCase(status)) {
-            holder.tvStatus.setTextColor(context.getResources().getColor(R.color.green_success));
-            holder.btnApprove.setVisibility(View.GONE);
-            holder.btnReject.setVisibility(View.GONE);
-        } else if ("REJECTED".equalsIgnoreCase(status)) {
+
+        holder.itemView.setOnClickListener(v -> {
+        } else if ("REJECTED".equals(status)) {
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.red_primary));
             holder.tvStatus.setTextColor(context.getResources().getColor(R.color.red_primary));
             holder.btnApprove.setVisibility(View.GONE);
-            holder.btnReject.setVisibility(View.GONE);
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.yellow_dark));
         } else {
             holder.tvStatus.setTextColor(context.getResources().getColor(R.color.brown_dark));
             holder.btnApprove.setVisibility(View.VISIBLE);
-            holder.btnReject.setVisibility(View.VISIBLE);
-        }
-
-        holder.itemView.setOnClickListener(v -> {
-            if (clickListener != null) clickListener.onNgoClicked(ngo);
-        });
-
-        holder.btnApprove.setOnClickListener(v -> approve(ngo));
-        holder.btnReject.setOnClickListener(v -> rejectWithReason(ngo));
-    }
-
-    @Override
     public int getItemCount() {
         return ngos == null ? 0 : ngos.size();
     }
@@ -105,6 +105,21 @@ public class NGOListAdapter extends RecyclerView.Adapter<NGOListAdapter.ViewHold
             public void onSuccess(ApiService.BasicResponse response) {
                 Toast.makeText(context, response.message != null ? response.message : "NGO approved", Toast.LENGTH_SHORT).show();
                 if (changeListener != null) changeListener.onListChanged();
+            holder.btnReject.setVisibility(View.VISIBLE);
+        }
+
+        holder.btnApprove.setOnClickListener(v -> {
+            if (clickListener != null) clickListener.onNgoClicked(ngo);
+        });
+
+            if (clickListener != null) clickListener.onNgoClicked(ngo);
+        });
+
+        holder.btnApprove.setOnClickListener(v -> approve(ngo));
+        holder.btnReject.setOnClickListener(v -> rejectWithReason(ngo));
+    }
+
+    @Override
             }
 
             @Override
@@ -125,7 +140,7 @@ public class NGOListAdapter extends RecyclerView.Adapter<NGOListAdapter.ViewHold
                     String reason = input.getText().toString().trim();
                     if (reason.isEmpty()) {
                         Toast.makeText(context, "Reason is required", Toast.LENGTH_SHORT).show();
-                        return;
+                .setNegativeButton("Cancel", null)
                     }
                     networkManager.rejectNGO(ngo.id, reason, new NetworkManager.ApiCallback<ApiService.BasicResponse>() {
                         @Override
@@ -140,7 +155,7 @@ public class NGOListAdapter extends RecyclerView.Adapter<NGOListAdapter.ViewHold
                         }
                     });
                 })
-                .setNegativeButton("Cancel", null)
+                            Toast.makeText(context, "NGO rejected", Toast.LENGTH_SHORT).show();
                 .show();
     }
 
@@ -163,4 +178,3 @@ public class NGOListAdapter extends RecyclerView.Adapter<NGOListAdapter.ViewHold
         }
     }
 }
-

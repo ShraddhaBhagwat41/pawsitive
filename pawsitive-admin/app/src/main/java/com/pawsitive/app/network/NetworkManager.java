@@ -191,26 +191,6 @@ public class NetworkManager {
         });
     }
 
-    public void addStaff(String email, String password, String name, String phone, ApiCallback<ApiService.BasicResponse> callback) {
-        ApiService.AddStaffRequest request = new ApiService.AddStaffRequest(email, password, name, phone);
-        apiService.addStaff("Bearer " + tokenManager.getToken(), request).enqueue(new Callback<ApiService.BasicResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<ApiService.BasicResponse> call,
-                                   @NonNull Response<ApiService.BasicResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    callback.onSuccess(response.body());
-                } else {
-                    callback.onError("Failed to add staff: " + response.code());
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<ApiService.BasicResponse> call, @NonNull Throwable t) {
-                callback.onError(t.getMessage());
-            }
-        });
-    }
-
     public void clearAuth() {
         tokenManager.clearToken();
     }

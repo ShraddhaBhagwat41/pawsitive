@@ -1145,9 +1145,10 @@ app.post('/api/ngos/:id/approve', verifyToken, async (req, res) => {
 
         // Send approval email to NGO
         const approvalEmailContent = `
-        <h2>✓ Your NGO has been Verified!</h2>
+        <h2>🐾 Your NGO has been Successfully Verified! 🐾</h2>
         <p>Dear ${ngoData.organization_name},</p>
-        <p>Congratulations! Your NGO has been verified and <strong>APPROVED</strong> by our admin team. Welcome to Pawsitive! 🐾</p>
+        <p>Congratulations! Your NGO has been verified and <strong>APPROVED</strong> by our admin team.</p>
+        <p><strong>You can now continue your wonderful journey saving animals in Pawsitive!</strong> Together, we can make a huge impact on the lives of our furry friends in need.</p>
         <p><strong>Organization:</strong> ${ngoData.organization_name}</p>
         <p><strong>Email:</strong> ${ngoData.ngo_email}</p>
         <p><strong>Next Steps:</strong></p>
@@ -1157,10 +1158,10 @@ app.post('/api/ngos/:id/approve', verifyToken, async (req, res) => {
             <li>Enter your email & password</li>
             <li>You'll be redirected to your NGO Dashboard</li>
         </ul>
-        <p>${admin_notes ? '<strong>Admin Notes:</strong> ' + admin_notes + '<br><br>' : ''}You can now start using all features of the Pawsitive platform to help animals in need!</p>
-        <p>Thank you for joining us!<br><strong>Best regards,<br>Pawsitive Admin Team</strong></p>
+        <p>${admin_notes ? '<strong>Admin Notes:</strong> ' + admin_notes + '<br><br>' : ''}Start using all the features of the Pawsitive platform today to help animals in need!</p>
+        <p>Thank you for joining our mission!<br><br><strong>Best regards,<br>Pawsitive Admin Team</strong> 🐶🐱</p>
         `;
-        await sendEmail(ngoData.ngo_email, '✓ Your NGO is Verified - Welcome to Pawsitive!', approvalEmailContent);
+        await sendEmail(ngoData.ngo_email, '🐾 Your NGO is Verified - Welcome to Pawsitive!', approvalEmailContent);
 
         res.json({
             success: true,

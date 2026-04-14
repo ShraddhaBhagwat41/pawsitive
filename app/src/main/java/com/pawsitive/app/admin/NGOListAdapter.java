@@ -25,18 +25,25 @@ public class NGOListAdapter extends RecyclerView.Adapter<NGOListAdapter.NGOViewH
         void onNgoClicked(ApiService.NGOProfile ngo);
     }
 
+    public interface OnListChangeListener {
+        void onListChanged();
+    }
+
     private Context context;
     private List<ApiService.NGOProfile> ngoList;
     private NetworkManager networkManager;
     private OnNgoClickListener clickListener;
+    private OnListChangeListener changeListener;
 
     public NGOListAdapter(Context context, List<ApiService.NGOProfile> ngoList,
                           NetworkManager networkManager,
-                          OnNgoClickListener clickListener) {
+                          OnNgoClickListener clickListener,
+                          OnListChangeListener changeListener) {
         this.context = context;
         this.ngoList = ngoList;
         this.networkManager = networkManager;
         this.clickListener = clickListener;
+        this.changeListener = changeListener;
     }
 
     @NonNull
@@ -95,6 +102,9 @@ public class NGOListAdapter extends RecyclerView.Adapter<NGOListAdapter.NGOViewH
             @Override
             public void onSuccess(ApiService.BasicResponse response) {
                 Toast.makeText(context, response.message != null ? response.message : "Approved successfully", Toast.LENGTH_SHORT).show();
+                if (changeListener != null) {
+                    changeListener.onListChanged();
+                }
             }
 
             @Override
@@ -129,6 +139,9 @@ public class NGOListAdapter extends RecyclerView.Adapter<NGOListAdapter.NGOViewH
             @Override
             public void onSuccess(ApiService.BasicResponse response) {
                 Toast.makeText(context, response.message != null ? response.message : "Rejected successfully", Toast.LENGTH_SHORT).show();
+                if (changeListener != null) {
+                    changeListener.onListChanged();
+                }
             }
 
             @Override
@@ -152,4 +165,3 @@ public class NGOListAdapter extends RecyclerView.Adapter<NGOListAdapter.NGOViewH
         }
     }
 }
-

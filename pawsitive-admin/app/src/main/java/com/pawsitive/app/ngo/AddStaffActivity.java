@@ -45,6 +45,14 @@ public class AddStaffActivity extends AppCompatActivity {
         String phone = etStaffPhone.getText().toString().trim();
         String password = etStaffPassword.getText().toString().trim();
 
+        if (!TextUtils.isEmpty(phone)) {
+            if (phone.length() == 10 && !phone.startsWith("+")) {
+                phone = "+91" + phone;
+            } else if (!phone.startsWith("+")) {
+                phone = "+" + phone;
+            }
+        }
+
         if (TextUtils.isEmpty(name)) {
             etStaffName.setError("Name is required");
             return;

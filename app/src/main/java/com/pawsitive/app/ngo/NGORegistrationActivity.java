@@ -25,8 +25,6 @@ import com.pawsitive.app.R;
 import com.pawsitive.app.network.NetworkManager;
 import com.pawsitive.app.network.ApiService;
 
-import java.util.UUID;
-
 public class NGORegistrationActivity extends AppCompatActivity {
 
     private ImageView ivNgoProfilePhoto;
@@ -120,23 +118,26 @@ public class NGORegistrationActivity extends AppCompatActivity {
         }
 
         setLoading(true);
-        tvNgoStatusMessage.setText("Creating account...");
+        tvNgoStatusMessage.setText("Registering...");
 
-        // STEP 1: Create the user in Firebase Auth
-        mAuth.createUserWithEmailAndPassword(email, password)
+        // 1. Check if user already exists in Auth or create new
+        if (mAuth.getCurrentUser() != null && email.equals(mAuth.getCurrentUser().getEmail())) {
+            // User already logged in (failed previously at file step)
+            proceedWithUploads(mAuth.getCurrentUser().getUid(), name, phone, address, license, description);
+        } else {
+            mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful() && mAuth.getCurrentUser() != null) {
-                        String uid = mAuth.getCurrentUser().getUid();
-                        tvNgoStatusMessage.setText("Account created. Uploading documents...");
-                        // STEP 2: Upload files
-                        startFileUploads(uid, name, phone, address, license, description);
+                        proceedWithUploads(mAuth.getCurrentUser().getUid(), name, phone, address, license, description);
                     } else {
-                        showError("Auth Error: " + (task.getException() != null ? task.getException().getMessage() : "Failed"));
+                        showError("Registration Error: " + (task.getException() != null ? task.getException().getMessage() : "Failed"));
                     }
                 });
+        }
     }
 
-    private void startFileUploads(String uid, String name, String phone, String address, String license, String description) {
+    private void proceedWithUploads(String uid, String name, String phone, String address, String license, String description) {
+        tvNgoStatusMessage.setText("Uploading documents...");
         if (profilePhotoUri != null) {
             uploadFile("ngo_docs/" + uid + "/profile.jpg", profilePhotoUri, profileUrl -> {
                 uploadCertificate(uid, name, phone, address, license, description, profileUrl);
@@ -149,16 +150,17 @@ public class NGORegistrationActivity extends AppCompatActivity {
     private void uploadCertificate(String uid, String name, String phone, String address, String license, String description, String profileUrl) {
         if (certificateUri != null) {
             uploadFile("ngo_docs/" + uid + "/certificate", certificateUri, certUrl -> {
-                tvNgoStatusMessage.setText("Files uploaded. Finalizing registration...");
-                callBackendRegister(name, phone, address, license, description, profileUrl, certUrl);
+                tvNgoStatusMessage.setText("Finalizing registration...");
+                callBackendRegister(uid, name, phone, address, license, description, profileUrl, certUrl);
             });
         } else {
-            callBackendRegister(name, phone, address, license, description, profileUrl, null);
+            callBackendRegister(uid, name, phone, address, license, description, profileUrl, null);
         }
     }
 
-    private void callBackendRegister(String name, String phone, String address, String license, String description, String profilePhotoUrl, String certificateUrl) {
+    private void callBackendRegister(String uid, String name, String phone, String address, String license, String description, String profileUrl, String certUrl) {
         ApiService.NGORegistrationRequest request = new ApiService.NGORegistrationRequest();
+        request.uid = uid; // Pass the UID so backend knows which profile to save
         request.email = email;
         request.password = password;
         request.organization_name = name;
@@ -166,8 +168,8 @@ public class NGORegistrationActivity extends AppCompatActivity {
         request.address = address;
         request.license_number = license;
         request.description = description;
-        request.profile_photo_url = profilePhotoUrl;
-        request.certificate_url = certificateUrl;
+        request.profile_photo_url = profileUrl;
+        request.certificate_url = certUrl;
 
         networkManager.registerNGO(request, new NetworkManager.ApiCallback<ApiService.RegisterResponse>() {
             @Override
@@ -175,7 +177,7 @@ public class NGORegistrationActivity extends AppCompatActivity {
                 setLoading(false);
                 tvNgoStatusMessage.setVisibility(View.VISIBLE);
                 tvNgoStatusMessage.setTextColor(ContextCompat.getColor(NGORegistrationActivity.this, R.color.green_success));
-                tvNgoStatusMessage.setText("details sent for verification");
+                tvNgoStatusMessage.setText("details sent for verification to admin.\nWill receive a mail and can check your status through login");
                 
                 tvLoginRedirect.setVisibility(View.VISIBLE);
                 btnSendForVerification.setText("SENT FOR VERIFICATION");

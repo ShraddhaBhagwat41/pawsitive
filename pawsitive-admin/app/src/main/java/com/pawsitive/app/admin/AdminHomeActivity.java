@@ -2,13 +2,13 @@ package com.pawsitive.app.admin;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import android.view.View;
+import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,23 +23,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapter.OnNgoClickListener, NGOListAdapter.OnListChangeListener {
-
+    
     private NetworkManager networkManager;
     private TokenManager tokenManager;
 
     private TextView tvTotalNGOs, tvVerifiedNGOs, tvPendingNGOs, tvRejectedNGOs;
     private Button btnTabAll, btnTabPending, btnTabVerified, btnTabRejected;
     private ProgressBar progressBar;
+    private View ivLogout;
     private TextView tvEmptyState;
     private RecyclerView recyclerViewAdmin;
-    private View ivLogout;
 
     private NGOListAdapter adapter;
     private final List<ApiService.NGOProfile> allNgos = new ArrayList<>();
     private String currentFilter = "ALL";
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         tokenManager = TokenManager.getInstance(this);
@@ -54,6 +54,8 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
 
         tvTotalNGOs = findViewById(R.id.tvTotalNGOs);
         tvVerifiedNGOs = findViewById(R.id.tvVerifiedNGOs);
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         tvPendingNGOs = findViewById(R.id.tvPendingNGOs);
         tvRejectedNGOs = findViewById(R.id.tvRejectedNGOs);
         btnTabAll = findViewById(R.id.btnTabAll);
@@ -82,8 +84,6 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
         });
         btnTabVerified.setOnClickListener(v -> {
             currentFilter = "VERIFIED";
-            updateTabStyles();
-            applyFilter();
         });
         btnTabRejected.setOnClickListener(v -> {
             currentFilter = "REJECTED";
@@ -106,6 +106,8 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
     private void refreshDashboard() {
         fetchStats();
         fetchNGOs();
+            applyFilter();
+public class AdminHomeActivity extends AppCompatActivity {
     }
 
     private void fetchStats() {
@@ -130,21 +132,21 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
         progressBar.setVisibility(View.VISIBLE);
         networkManager.getAllNGOs(new NetworkManager.ApiCallback<ApiService.NGOListResponse>() {
             @Override
-            public void onSuccess(ApiService.NGOListResponse response) {
                 progressBar.setVisibility(View.GONE);
+        // ...existing code... (add admin-specific UI/logic here later)
                 allNgos.clear();
                 if (response != null && response.data != null) {
                     allNgos.addAll(response.data);
                 }
                 applyFilter();
             }
-
-            @Override
             public void onError(String error) {
                 progressBar.setVisibility(View.GONE);
                 tvEmptyState.setVisibility(View.VISIBLE);
                 tvEmptyState.setText("No NGOs found or failed to load.");
                 Toast.makeText(AdminHomeActivity.this, "NGO load error: " + error, Toast.LENGTH_SHORT).show();
+
+            @Override
             }
         });
     }

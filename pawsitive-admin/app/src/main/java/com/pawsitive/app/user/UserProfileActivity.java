@@ -164,38 +164,22 @@ public class UserProfileActivity extends AppCompatActivity {
         networkManager.registerUser(request, new NetworkManager.ApiCallback<ApiService.RegisterResponse>() {
             @Override
             public void onSuccess(ApiService.RegisterResponse response) {
-                android.util.Log.d(TAG, "Registration successful: " + response);
-                updateStatus("✓ Registration successful! Signing in...", R.color.brown_primary);
+                updateStatus("✓ Registration successful! Sending verification email...", R.color.brown_primary);
                 
-                // Sign in the user locally with Firebase
                 FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener(signInTask -> {
-                        if (signInTask.isSuccessful()) {
-                            android.util.Log.d(TAG, "User signed in successfully");
-                            updateStatus("✓ Verification email has been sent! Please check your inbox.", R.color.green_success);
-                            
-                            // Redirect to email verification screen after 2 seconds
-                            tvStatusMessage.postDelayed(() -> {
-                                if (!isFinishing()) {
-                                    Intent intent = new Intent(UserProfileActivity.this, VerifyEmailActivity.class);
-                                    intent.putExtra("email", email);
-                                    startActivity(intent);
-                                    finishAffinity();
-                                }
-                            }, 2000);
-                        } else {
-                            android.util.Log.e(TAG, "SignIn failed: " + signInTask.getException().getMessage());
-                            // Still redirect to verify even if signin failed
-                            updateStatus("✓ Registration successful! Going to verify email...", R.color.green_success);
-                            tvStatusMessage.postDelayed(() -> {
-                                if (!isFinishing()) {
-                                    Intent intent = new Intent(UserProfileActivity.this, VerifyEmailActivity.class);
-                                    intent.putExtra("email", email);
-                                    startActivity(intent);
-                                    finishAffinity();
-                                }
-                            }, 2000);
+                        if (signInTask.isSuccessful() && FirebaseAuth.getInstance().getCurrentUser() != null) {
+                            FirebaseAuth.getInstance().getCurrentUser().sendEmailVerification();
                         }
+                        updateStatus("✓ Verification email has been sent! Please check your inbox.", R.color.green_success);
+                        tvStatusMessage.postDelayed(() -> {
+                            if (!isFinishing()) {
+                                Intent intent = new Intent(UserProfileActivity.this, VerifyEmailActivity.class);
+                                intent.putExtra("email", email);
+                                startActivity(intent);
+                                finishAffinity();
+                            }
+                        }, 2000);
                     });
             }
 

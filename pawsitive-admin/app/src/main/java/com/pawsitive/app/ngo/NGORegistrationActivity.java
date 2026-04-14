@@ -1,3 +1,6 @@
+}
+                tvNgoStatusMessage.setText("✓ Thank you for registering!\n\n Status: PENDING\n\nAdmin will review your documents and send you login credentials via email.\n\nYou can close this app and check your email for updates.");
+                btnSendForVerification.setEnabled(true);
 package com.pawsitive.app.ngo;
 
 import android.app.ProgressDialog;
@@ -221,16 +224,34 @@ public class NGORegistrationActivity extends AppCompatActivity {
         // Call REST API to register NGO
         networkManager.registerNGO(request, new NetworkManager.ApiCallback<ApiService.RegisterResponse>() {
             @Override
+                tvNgoStatusMessage.setVisibility(View.VISIBLE);
             public void onSuccess(ApiService.RegisterResponse response) {
-                android.util.Log.d("NGORegistration", "Registration successful");
-                progressNgo.setVisibility(View.GONE);
-                tvNgoStatusMessage.setTextColor(ContextCompat.getColor(NGORegistrationActivity.this, R.color.green_success));
-                tvNgoStatusMessage.setText("✓ Thank you for registering!\n\n📋 Status: PENDING\n\nAdmin will review your documents and send you login credentials via email.\n\nYou can close this app and check your email for updates.");
+                tvNgoStatusMessage.setText("Sent for verification. You can check your status through login.");
+                btnSendForVerification.setVisibility(View.GONE);
+                
+                tvNgoStatusMessage.setOnClickListener(v -> {
+                    Intent intent = new Intent(NGORegistrationActivity.this, com.pawsitive.app.LoginActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finishAffinity();
+                });
+                
+                tvNgoStatusMessage.setText("✓ Thank you for registering!\n\n Status: PENDING\n\nAdmin will review your documents and send you login credentials via email.\n\nYou can close this app and check your email for updates.");
                 btnSendForVerification.setEnabled(true);
                 scrollToBottom();
             }
 
             @Override
+                try {
+                    if (error != null && error.trim().startsWith("{")) {
+                        org.json.JSONObject errObj = new org.json.JSONObject(error);
+                        if (errObj.has("error")) {
+                            error = errObj.getString("error");
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore parsing error
+                }
             public void onError(String error) {
                 android.util.Log.e("NGORegistration", "Registration error: " + error);
                 onUploadFailed(error);
@@ -264,6 +285,61 @@ public class NGORegistrationActivity extends AppCompatActivity {
 
     private interface StorageCallback {
         void onSuccess(String url);
-        void onFailure(String error);
+
+    private void callBackendRegister(String name, String phone, String address, String license, String description, String profileUrl, String certUrl) {
+        ApiService.NGORegistrationRequest request = new ApiService.NGORegistrationRequest();
+        request.email = email;
+        request.password = password;
+        request.organization_name = name;
+        request.phone = phone;
+        request.address = address;
+        request.license_number = license;
+        request.description = description;
+        request.profile_photo_url = profileUrl;
+        request.certificate_url = certUrl;
+
+        networkManager.registerNGO(request, new NetworkManager.ApiCallback<ApiService.RegisterResponse>() {
+            @Override
+            public void onSuccess(ApiService.RegisterResponse response) {
+                progressNgo.setVisibility(View.GONE);
+                tvNgoStatusMessage.setVisibility(View.VISIBLE);
+                tvNgoStatusMessage.setTextColor(ContextCompat.getColor(NGORegistrationActivity.this, R.color.green_success));
+                tvNgoStatusMessage.setText("Sent for verification. You can check your status through login.");
+                btnSendForVerification.setVisibility(View.GONE);
+                
+                tvNgoStatusMessage.setOnClickListener(v -> {
+                    Intent intent = new Intent(NGORegistrationActivity.this, com.pawsitive.app.LoginActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finishAffinity();
+                });
+            }
+    }
+            @Override
+            public void onError(String error) {
+                try {
+                    if (error != null && error.trim().startsWith("{")) {
+                        org.json.JSONObject errObj = new org.json.JSONObject(error);
+                        if (errObj.has("error")) {
+                            error = errObj.getString("error");
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore parsing error
+                }
+                showError(error);
+            }
+        });
+    }
+
+    private void uploadFile(String path, Uri uri, OnUploadSuccess successListener) {
+        StorageReference ref = storage.getReference().child(path);
+        ref.putFile(uri)
+                .addOnSuccessListener(taskSnapshot -> ref.getDownloadUrl()
+                        .addOnSuccessListener(uri1 -> successListener.onSuccess(uri1.toString()))
+                        .addOnFailureListener(e -> successListener.onFailure(e.getMessage())))
+                .addOnFailureListener(e -> successListener.onFailure(e.getMessage()));
     }
 }
+}
+

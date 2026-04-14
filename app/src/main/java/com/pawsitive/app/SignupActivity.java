@@ -15,6 +15,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.pawsitive.app.auth.RoleSelectionActivity;
+import com.pawsitive.app.network.ApiService;
+import com.pawsitive.app.network.NetworkManager;
 
 public class SignupActivity extends AppCompatActivity {
 
@@ -23,11 +25,14 @@ public class SignupActivity extends AppCompatActivity {
     private CheckBox cbTerms;
     private Button btnContinue;
     private TextView tvLogin;
+    private NetworkManager networkManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signup);
+
+        networkManager = new NetworkManager(this);
 
         // Bind views
         ivBack = findViewById(R.id.ivBack);
@@ -39,83 +44,69 @@ public class SignupActivity extends AppCompatActivity {
         tvLogin = findViewById(R.id.tvLogin);
 
         // Back button
-        ivBack.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(SignupActivity.this, WelcomeActivity.class));
-                finish();
-            }
-        });
+        ivBack.setOnClickListener(v -> finish());
 
         // Login text
-        tvLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(SignupActivity.this, LoginActivity.class));
-                finish();
-            }
+        tvLogin.setOnClickListener(v -> {
+            startActivity(new Intent(SignupActivity.this, LoginActivity.class));
+            finish();
         });
 
-        // Continue button - Just pass data to next screen
-        btnContinue.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                moveToRoleSelection();
-            }
-        });
+        // Continue button
+        btnContinue.setOnClickListener(v -> checkEmailAndProceed());
     }
 
-    private void moveToRoleSelection() {
+    private void checkEmailAndProceed() {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
         String confirmPassword = etConfirmPassword.getText().toString().trim();
 
         // Validation
-        if (TextUtils.isEmpty(email)) {
-            etEmail.setError("Email is required");
-            etEmail.requestFocus();
-            return;
-        }
-
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             etEmail.setError("Enter a valid email");
-            etEmail.requestFocus();
-            return;
-        }
-
-        if (TextUtils.isEmpty(password)) {
-            etPassword.setError("Password is required");
-            etPassword.requestFocus();
             return;
         }
 
         if (password.length() < 6) {
             etPassword.setError("Password must be at least 6 characters");
-            etPassword.requestFocus();
-            return;
-        }
-
-        if (TextUtils.isEmpty(confirmPassword)) {
-            etConfirmPassword.setError("Please confirm your password");
-            etConfirmPassword.requestFocus();
             return;
         }
 
         if (!password.equals(confirmPassword)) {
             etConfirmPassword.setError("Passwords do not match");
-            etConfirmPassword.requestFocus();
             return;
         }
 
         if (!cbTerms.isChecked()) {
-            Toast.makeText(SignupActivity.this, "Please agree to terms and conditions", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please agree to terms", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Navigate to RoleSelectionActivity without creating account yet
-        Intent intent = new Intent(SignupActivity.this, RoleSelectionActivity.class);
-        intent.putExtra("email", email);
-        intent.putExtra("password", password);
-        startActivity(intent);
+        btnContinue.setEnabled(false);
+        btnContinue.setText("Checking...");
+
+        networkManager.checkEmail(email, new NetworkManager.ApiCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean exists) {
+                btnContinue.setEnabled(true);
+                btnContinue.setText("Continue");
+                if (exists) {
+                    etEmail.setError("Email already registered!");
+                    Toast.makeText(SignupActivity.this, "Email already registered", Toast.LENGTH_LONG).show();
+                } else {
+                    Intent intent = new Intent(SignupActivity.this, RoleSelectionActivity.class);
+                    intent.putExtra("email", email);
+                    intent.putExtra("password", password);
+                    startActivity(intent);
+                }
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                btnContinue.setEnabled(true);
+                btnContinue.setText("Continue");
+                Toast.makeText(SignupActivity.this, "Error: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

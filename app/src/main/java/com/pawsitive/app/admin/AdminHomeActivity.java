@@ -21,7 +21,7 @@ import com.pawsitive.app.network.NetworkManager;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapter.OnNgoClickListener {
+public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapter.OnNgoClickListener, NGOListAdapter.OnListChangeListener {
 
     private RecyclerView recyclerViewAdmin;
     private NGOListAdapter adapter;
@@ -63,7 +63,7 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
         btnTabRejected = findViewById(R.id.btnTabRejected);
 
         recyclerViewAdmin.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new NGOListAdapter(this, new ArrayList<>(), networkManager, this);
+        adapter = new NGOListAdapter(this, new ArrayList<>(), networkManager, this, this);
         recyclerViewAdmin.setAdapter(adapter);
 
         ivLogout.setOnClickListener(v -> logout());
@@ -90,6 +90,16 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
         });
 
         updateTabStyles();
+        refreshData();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshData();
+    }
+
+    private void refreshData() {
         fetchStats();
         fetchNGOs();
     }
@@ -110,7 +120,7 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
 
             @Override
             public void onError(String errorMessage) {
-                Toast.makeText(AdminHomeActivity.this, "Failed to load stats", Toast.LENGTH_SHORT).show();
+                // Toast.makeText(AdminHomeActivity.this, "Failed to load stats", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -118,15 +128,15 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
     private void setStat(View card, String label, int value) {
         TextView tvLabel = card.findViewById(R.id.tvStatLabel);
         TextView tvValue = card.findViewById(R.id.tvStatValue);
-        tvLabel.setText(label);
-        tvValue.setText(String.valueOf(value));
+        if (tvLabel != null) tvLabel.setText(label);
+        if (tvValue != null) tvValue.setText(String.valueOf(value));
     }
 
     private void setStatSmall(View card, String label, int value) {
         TextView tvLabel = card.findViewById(R.id.tvStatLabelSmall);
         TextView tvValue = card.findViewById(R.id.tvStatValueSmall);
-        tvLabel.setText(label);
-        tvValue.setText(String.valueOf(value));
+        if (tvLabel != null) tvLabel.setText(label);
+        if (tvValue != null) tvValue.setText(String.valueOf(value));
     }
 
     private void fetchNGOs() {
@@ -149,8 +159,7 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
             public void onError(String errorMessage) {
                 progressBar.setVisibility(View.GONE);
                 tvEmptyState.setVisibility(View.VISIBLE);
-                tvEmptyState.setText("Error loading NGOs");
-                Toast.makeText(AdminHomeActivity.this, "Failed: " + errorMessage, Toast.LENGTH_SHORT).show();
+                tvEmptyState.setText("No NGOs to show.");
             }
         });
     }
@@ -168,6 +177,7 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
         if (filtered.isEmpty()) {
             recyclerViewAdmin.setVisibility(View.GONE);
             tvEmptyState.setVisibility(View.VISIBLE);
+            tvEmptyState.setText("No " + currentFilter.toLowerCase() + " NGOs found.");
         } else {
             recyclerViewAdmin.setVisibility(View.VISIBLE);
             tvEmptyState.setVisibility(View.GONE);
@@ -176,11 +186,15 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
     }
 
     private void updateTabStyles() {
-        // simple background highlight like screenshot
-        btnTabAll.setBackgroundColor(getResources().getColor("ALL".equals(currentFilter) ? R.color.yellow_primary : android.R.color.transparent));
-        btnTabPending.setBackgroundColor(getResources().getColor("PENDING".equals(currentFilter) ? R.color.yellow_primary : android.R.color.transparent));
-        btnTabVerified.setBackgroundColor(getResources().getColor("VERIFIED".equals(currentFilter) ? R.color.yellow_primary : android.R.color.transparent));
-        btnTabRejected.setBackgroundColor(getResources().getColor("REJECTED".equals(currentFilter) ? R.color.yellow_primary : android.R.color.transparent));
+        btnTabAll.setAlpha("ALL".equals(currentFilter) ? 1.0f : 0.5f);
+        btnTabPending.setAlpha("PENDING".equals(currentFilter) ? 1.0f : 0.5f);
+        btnTabVerified.setAlpha("VERIFIED".equals(currentFilter) ? 1.0f : 0.5f);
+        btnTabRejected.setAlpha("REJECTED".equals(currentFilter) ? 1.0f : 0.5f);
+    }
+
+    @Override
+    public void onListChanged() {
+        refreshData();
     }
 
     private void logout() {
@@ -207,4 +221,3 @@ public class AdminHomeActivity extends AppCompatActivity implements NGOListAdapt
         startActivity(intent);
     }
 }
-

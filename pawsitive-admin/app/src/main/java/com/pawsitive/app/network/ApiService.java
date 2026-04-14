@@ -114,20 +114,6 @@ public interface ApiService {
         public String profile_photo_url;
     }
 
-    public static class AddStaffRequest {
-        public String email;
-        public String password;
-        public String name;
-        public String phone;
-
-        public AddStaffRequest(String email, String password, String name, String phone) {
-            this.email = email;
-            this.password = password;
-            this.name = name;
-            this.phone = phone;
-        }
-    }
-
     @POST("/api/auth/login")
     Call<LoginResponse> login(@Body LoginRequest request);
 
@@ -151,7 +137,4 @@ public interface ApiService {
 
     @POST("/api/ngos/{id}/reject")
     Call<BasicResponse> rejectNGO(@Header("Authorization") String token, @Path("id") String id, @Body RejectRequest request);
-
-    @POST("/api/ngo/staff")
-    Call<BasicResponse> addStaff(@Header("Authorization") String token, @Body AddStaffRequest request);
 }
