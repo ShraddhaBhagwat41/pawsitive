@@ -53,6 +53,7 @@ dependencies {
 
     // Google Play Services Location
     implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
 
     // Glide for image loading
     implementation(libs.glide)
@@ -61,6 +62,10 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.gson)
+
+    // FCM and WorkManager for notifications and background tasks
+    implementation("com.google.firebase:firebase-messaging:23.4.1")
+    implementation("androidx.work:work-runtime:2.9.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

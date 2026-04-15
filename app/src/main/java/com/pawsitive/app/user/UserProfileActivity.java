@@ -31,6 +31,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.pawsitive.app.R;
@@ -63,6 +64,7 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private NetworkManager networkManager;
     private FirebaseStorage storage;
+    private FirebaseAuth auth;
     private FusedLocationProviderClient fusedLocationClient;
 
     private final ActivityResultLauncher<String> pickImage = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -79,6 +81,7 @@ public class UserProfileActivity extends AppCompatActivity {
 
         networkManager = new NetworkManager(this);
         storage = FirebaseStorage.getInstance();
+        auth = FirebaseAuth.getInstance();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         etFullName = findViewById(R.id.etUserFullName);
@@ -162,11 +165,50 @@ public class UserProfileActivity extends AppCompatActivity {
         setLoading(true);
         updateStatus("Finalizing registration...", R.color.brown_primary);
 
-        if (imageUri != null) {
-            uploadProfilePhoto(name, phone);
-        } else {
-            registerUserViaAPI(name, phone, null);
+        ensureFirebaseUserSignedIn(() -> {
+            if (imageUri != null) {
+                uploadProfilePhoto(name, phone);
+            } else {
+                registerUserViaAPI(name, phone, null);
+            }
+        });
+    }
+
+    /**
+     * Storage rules typically require request.auth != null.
+     * Make sure the app is authenticated with Firebase before attempting any Storage upload.
+     */
+    private void ensureFirebaseUserSignedIn(@NonNull Runnable onReady) {
+        FirebaseUser current = auth.getCurrentUser();
+        if (current != null) {
+            onReady.run();
+            return;
         }
+
+        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
+            handleError("Missing credentials. Please go back and try again.");
+            return;
+        }
+
+        auth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful() && auth.getCurrentUser() != null) {
+                        onReady.run();
+                    } else {
+                        // If the account already exists, createUser... fails; fall back to sign-in.
+                        auth.signInWithEmailAndPassword(email, password)
+                                .addOnCompleteListener(this, signInTask -> {
+                                    if (signInTask.isSuccessful() && auth.getCurrentUser() != null) {
+                                        onReady.run();
+                                    } else {
+                                        String msg = (signInTask.getException() != null)
+                                                ? signInTask.getException().getMessage()
+                                                : "Authentication failed";
+                                        handleError("Auth Error: " + msg);
+                                    }
+                                });
+                    }
+                });
     }
 
     private void uploadProfilePhoto(String name, String phone) {

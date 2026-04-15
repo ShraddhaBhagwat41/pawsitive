@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -17,8 +18,29 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.os.Build;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import androidx.core.content.ContextCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
+
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -46,11 +68,19 @@ public class HomeActivity extends AppCompatActivity {
     
     // Track dialogs to prevent window leaks
     private AlertDialog currentDialog;
+
+    private static final int NOTIFICATION_PERMISSION_CODE = 123;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_user_home);
+        setContentView(R.layout.activity_home);
+
+        askNotificationPermission();
+        fetchFCMToken();
+
+        // Trigger a test notification after 5 seconds so you can take a screenshot
+        new Handler(Looper.getMainLooper()).postDelayed(this::showTestNotification, 5000);
 
         // Initialize views
         initializeViews();
@@ -298,60 +328,34 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         // Report Incident button
-        btnReportIncident.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80).start();
-            } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                v.animate().scaleX(1f).scaleY(1f).setDuration(80).start();
-                Intent intent = new Intent(HomeActivity.this, ReportAnimalActivity.class);
-                startActivity(intent);
-            } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-                v.animate().scaleX(1f).scaleY(1f).setDuration(80).start();
-            }
-            return true;
+        btnReportIncident.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, ReportAnimalActivity.class);
+            startActivity(intent);
         });
 
         // Emergency button
-        btnEmergency.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80).start();
-            } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                v.animate().scaleX(1f).scaleY(1f).setDuration(80).start();
-
-                // Show emergency options dialog
-                currentDialog = new AlertDialog.Builder(this)
-                        .setTitle("Emergency Contacts")
-                        .setItems(new String[]{
-                                "Animal Helpline - 1962",
-                                "Police - 100",
-                                "Ambulance - 102",
-                                "National Emergency - 112"
-                        }, (dialog, which) -> {
-                            String[] numbers = {"1962", "100", "102", "112"};
-                            Intent dialIntent = new Intent(Intent.ACTION_DIAL);
-                            dialIntent.setData(Uri.parse("tel:" + numbers[which]));
-                            startActivity(dialIntent);
-                        })
-                        .show();
-
-            } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-                v.animate().scaleX(1f).scaleY(1f).setDuration(80).start();
-            }
-            return true;
+        btnEmergency.setOnClickListener(v -> {
+            // Show emergency options dialog
+            currentDialog = new AlertDialog.Builder(this)
+                    .setTitle("Emergency Contacts")
+                    .setItems(new String[]{
+                            "Animal Helpline - 1962",
+                            "Police - 100",
+                            "Ambulance - 102",
+                            "National Emergency - 112"
+                    }, (dialog, which) -> {
+                        String[] numbers = {"1962", "100", "102", "112"};
+                        Intent dialIntent = new Intent(Intent.ACTION_DIAL);
+                        dialIntent.setData(Uri.parse("tel:" + numbers[which]));
+                        startActivity(dialIntent);
+                    })
+                    .show();
         });
 
         // Add Pet button
-        btnAddPet.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80).start();
-            } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                v.animate().scaleX(1f).scaleY(1f).setDuration(80).start();
-                Toast.makeText(this, "Add a new pet", Toast.LENGTH_SHORT).show();
-                // TODO: Replace Toast with Intent when AddPetActivity is ready
-            } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-                v.animate().scaleX(1f).scaleY(1f).setDuration(80).start();
-            }
-            return true;
+        btnAddPet.setOnClickListener(v -> {
+            Toast.makeText(this, "Add a new pet", Toast.LENGTH_SHORT).show();
+            // TODO: Replace Toast with Intent when AddPetActivity is ready
         });
 
         // Bottom navigation
@@ -479,5 +483,75 @@ public class HomeActivity extends AppCompatActivity {
             swipeRefreshLayout.setRefreshing(false);
             Toast.makeText(this, "Pet list refreshed!", Toast.LENGTH_SHORT).show();
         }, 1000);
+    }
+
+    private void askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_CODE);
+            }
+        }
+    }
+
+    private void showTestNotification() {
+        Intent intent = new Intent(this, HomeActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
+                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+
+        String channelId = "fcm_default_channel";
+        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        NotificationCompat.Builder notificationBuilder =
+                new NotificationCompat.Builder(this, channelId)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("🚨 Emergency: Animal in Need!")
+                        .setContentText("A dog is injured near your location.")
+                        .setAutoCancel(true)
+                        .setSound(defaultSoundUri)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setContentIntent(pendingIntent);
+
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(channelId,
+                    "Emergency Alerts",
+                    NotificationManager.IMPORTANCE_HIGH);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        notificationManager.notify(999, notificationBuilder.build());
+    }
+
+    private void fetchFCMToken() {
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            if (!task.isSuccessful() || task.getResult() == null) {
+                return;
+            }
+            String token = task.getResult();
+            String uid = FirebaseAuth.getInstance().getUid();
+            if (uid != null) {
+                // Determine user vs ngo profile collection or simply save in both/where applicable
+                FirebaseFirestore db = FirebaseFirestore.getInstance();
+                db.collection("users").document(uid).update("fcmToken", token)
+                  .addOnFailureListener(e -> {
+                      // Try NGO side if user document update fails
+                      db.collection("ngo_profiles").document(uid).update("fcmToken", token);
+                  });
+            }
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == NOTIFICATION_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Notification permission granted", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Notification permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

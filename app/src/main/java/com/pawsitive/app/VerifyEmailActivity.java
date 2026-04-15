@@ -12,10 +12,14 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.pawsitive.app.ngo.NGOHomeActivity;
+import com.pawsitive.app.admin.AdminHomeActivity;
 import com.pawsitive.app.user.UserHomeActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.regex.Pattern;
 
 public class VerifyEmailActivity extends AppCompatActivity {
 
@@ -242,15 +246,13 @@ public class VerifyEmailActivity extends AppCompatActivity {
 
     private void goToDashboard() {
         android.util.Log.d("VerifyEmail", "Opening UserHomeActivity");
-        try {
-            Intent intent = new Intent(VerifyEmailActivity.this, UserHomeActivity.class);
+        // For general users, start the User feature
+        runOnUiThread(() -> {
+            Intent intent = new Intent(VerifyEmailActivity.this, HomeActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
-            finishAffinity();
-        } catch (Exception e) {
-            android.util.Log.e("VerifyEmail", "Error opening dashboard: " + e.getMessage());
-            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
+            finish();
+        });
     }
 
     private void goToLogin() {

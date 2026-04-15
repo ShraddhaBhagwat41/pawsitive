@@ -1,6 +1,8 @@
 package com.pawsitive.app.ngo;
 
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -18,12 +20,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.pawsitive.app.LoginActivity;
 import com.pawsitive.app.R;
 import com.pawsitive.app.network.NetworkManager;
 import com.pawsitive.app.network.ApiService;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class NGORegistrationActivity extends AppCompatActivity {
 
@@ -40,6 +49,7 @@ public class NGORegistrationActivity extends AppCompatActivity {
     private NetworkManager networkManager;
     private FirebaseStorage storage;
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
     private ActivityResultLauncher<String> profilePhotoPicker;
     private ActivityResultLauncher<String> certificatePicker;
@@ -54,6 +64,7 @@ public class NGORegistrationActivity extends AppCompatActivity {
         networkManager = new NetworkManager(this);
         storage = FirebaseStorage.getInstance();
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
         email = getIntent().getStringExtra("email");
         password = getIntent().getStringExtra("password");
@@ -159,6 +170,10 @@ public class NGORegistrationActivity extends AppCompatActivity {
     }
 
     private void callBackendRegister(String uid, String name, String phone, String address, String license, String description, String profileUrl, String certUrl) {
+        // Try to derive lat/lng from the address now so incident map can show nearby NGOs.
+        // If geocoding fails, we still register; admin/NGO can update location later.
+        Double[] latLng = geocodeAddress(address);
+
         ApiService.NGORegistrationRequest request = new ApiService.NGORegistrationRequest();
         request.uid = uid; // Pass the UID so backend knows which profile to save
         request.email = email;
@@ -174,15 +189,18 @@ public class NGORegistrationActivity extends AppCompatActivity {
         networkManager.registerNGO(request, new NetworkManager.ApiCallback<ApiService.RegisterResponse>() {
             @Override
             public void onSuccess(ApiService.RegisterResponse response) {
-                setLoading(false);
-                tvNgoStatusMessage.setVisibility(View.VISIBLE);
-                tvNgoStatusMessage.setTextColor(ContextCompat.getColor(NGORegistrationActivity.this, R.color.green_success));
-                tvNgoStatusMessage.setText("details sent for verification to admin.\nWill receive a mail and can check your status through login");
-                
-                tvLoginRedirect.setVisibility(View.VISIBLE);
-                btnSendForVerification.setText("SENT FOR VERIFICATION");
-                btnSendForVerification.setEnabled(false);
-                scrollToBottom();
+                // Save/merge NGO location data in Firestore for map discovery.
+                saveNgoProfileToFirestore(uid, name, phone, address, profileUrl, certUrl, latLng[0], latLng[1], () -> {
+                    setLoading(false);
+                    tvNgoStatusMessage.setVisibility(View.VISIBLE);
+                    tvNgoStatusMessage.setTextColor(ContextCompat.getColor(NGORegistrationActivity.this, R.color.green_success));
+                    tvNgoStatusMessage.setText("details sent for verification to admin.\nWill receive a mail and can check your status through login");
+
+                    tvLoginRedirect.setVisibility(View.VISIBLE);
+                    btnSendForVerification.setText("SENT FOR VERIFICATION");
+                    btnSendForVerification.setEnabled(false);
+                    scrollToBottom();
+                });
             }
 
             @Override
@@ -201,6 +219,57 @@ public class NGORegistrationActivity extends AppCompatActivity {
                 })
                 .addOnSuccessListener(downloadUri -> successListener.onSuccess(downloadUri.toString()))
                 .addOnFailureListener(e -> showError("Upload Error: " + e.getMessage()));
+    }
+
+    private Double[] geocodeAddress(String address) {
+        try {
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            List<Address> results = geocoder.getFromLocationName(address, 1);
+            if (results != null && !results.isEmpty()) {
+                Address a = results.get(0);
+                return new Double[]{a.getLatitude(), a.getLongitude()};
+            }
+        } catch (IOException ignored) {
+            // Network or service unavailable; skip lat/lng for now.
+        } catch (IllegalArgumentException ignored) {
+            // Bad address input.
+        }
+        return new Double[]{null, null};
+    }
+
+    private void saveNgoProfileToFirestore(
+            String uid,
+            String name,
+            String phone,
+            String address,
+            String profileUrl,
+            String certUrl,
+            Double latitude,
+            Double longitude,
+            Runnable onComplete
+    ) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("uid", uid);
+        data.put("organization_name", name);
+        data.put("phone", phone);
+        data.put("address", address);
+        if (profileUrl != null) data.put("profile_photo_url", profileUrl);
+        if (certUrl != null) data.put("certificate_url", certUrl);
+        if (latitude != null && longitude != null) {
+            data.put("latitude", latitude);
+            data.put("longitude", longitude);
+        }
+        data.put("status", "PENDING");
+
+        // Use UID as document id so it is stable and easy to update later.
+        db.collection("ngo_profiles")
+                .document(uid)
+                .set(data, com.google.firebase.firestore.SetOptions.merge())
+                .addOnSuccessListener(unused -> onComplete.run())
+                .addOnFailureListener(e -> {
+                    // Firestore save failure shouldn't block user; still allow flow to complete.
+                    onComplete.run();
+                });
     }
 
     private void showError(String message) {

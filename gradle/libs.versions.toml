@@ -34,6 +34,7 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version = "21.3.0" }
+play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version = "19.0.0" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }

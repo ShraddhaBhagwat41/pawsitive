@@ -12,8 +12,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.pawsitive.app.ngo.NGOHomeActivity;
-import com.pawsitive.app.user.UserHomeActivity;
 import com.pawsitive.app.admin.AdminHomeActivity;
 import com.pawsitive.app.network.NetworkManager;
 import com.pawsitive.app.network.ApiService;
@@ -26,6 +26,7 @@ public class LoginActivity extends AppCompatActivity {
     private ProgressBar progressBar;
 
     private NetworkManager networkManager;
+    private FirebaseAuth firebaseAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +35,9 @@ public class LoginActivity extends AppCompatActivity {
 
         // Initialize Network Manager
         networkManager = new NetworkManager(this);
+
+        // Firebase Auth (needed for Firebase Storage rules that require authentication)
+        firebaseAuth = FirebaseAuth.getInstance();
 
         // Initialize views
         etEmail = findViewById(R.id.etEmail);
@@ -81,11 +85,22 @@ public class LoginActivity extends AppCompatActivity {
         networkManager.login(email, password, new NetworkManager.ApiCallback<ApiService.LoginResponse>() {
             @Override
             public void onSuccess(ApiService.LoginResponse response) {
-                progressBar.setVisibility(View.GONE);
-                btnLogin.setEnabled(true);
-                
-                Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
-                goToHome(response.role);
+                // Also sign into FirebaseAuth so Firebase Storage operations have request.auth
+                firebaseAuth.signInWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(task -> {
+                            progressBar.setVisibility(View.GONE);
+                            btnLogin.setEnabled(true);
+
+                            if (!task.isSuccessful()) {
+                                String msg = task.getException() != null ? task.getException().getMessage() : "Unknown Firebase auth error";
+                                Toast.makeText(LoginActivity.this, "Login ok, but Firebase auth failed: " + msg, Toast.LENGTH_LONG).show();
+                                // Still continue to home; Firestore/Storage may fail if rules require auth.
+                            } else {
+                                Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
+                            }
+
+                            goToHome(response.role);
+                        });
             }
 
             @Override
@@ -105,7 +120,7 @@ public class LoginActivity extends AppCompatActivity {
         } else if ("NGO".equalsIgnoreCase(role)) {
             intent = new Intent(LoginActivity.this, NGOHomeActivity.class);
         } else {
-            intent = new Intent(LoginActivity.this, UserHomeActivity.class);
+            intent = new Intent(LoginActivity.this, HomeActivity.class);
         }
         
         if (intent != null) {

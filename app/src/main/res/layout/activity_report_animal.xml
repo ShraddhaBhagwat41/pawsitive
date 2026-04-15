@@ -14,7 +14,6 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!-- Back Button -->
         <ImageView
             android:id="@+id/ivBack"
             android:layout_width="40dp"
@@ -22,23 +21,18 @@
             android:src="@drawable/ic_back_arrow"
             android:contentDescription="@string/back_button"
             android:padding="8dp"
-            android:clickable="true"
-            android:focusable="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:layout_marginBottom="16dp" />
 
-        <!-- Title -->
         <TextView
-            android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/report_animal_title"
+            android:text="Report Animal Incident"
             android:textSize="28sp"
             android:textStyle="bold"
             android:textColor="@color/gray_dark"
             android:layout_marginBottom="8dp" />
 
-        <!-- Subtitle -->
         <TextView
             android:id="@+id/tvSubtitle"
             android:layout_width="wrap_content"
@@ -46,110 +40,126 @@
             android:text="@string/report_animal_subtitle"
             android:textSize="14sp"
             android:textColor="@color/gray_text"
-            android:lineSpacingExtra="2dp"
             android:layout_marginBottom="24dp" />
 
-        <!-- Photo Upload Section -->
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginBottom="8dp">
-
-            <!-- Circular Photo Icon -->
-            <ImageView
-                android:id="@+id/ivPhotoIcon"
-                android:layout_width="160dp"
-                android:layout_height="160dp"
-                android:clickable="true"
-                android:contentDescription="@string/upload_photo"
-                android:focusable="true"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_camera_circle" />
-
-            <Spinner
-                android:id="@+id/spinnerCondition"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/spinner_background"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:spinnerMode="dropdown" />
-
-        </RelativeLayout>
-
-        <!-- Maximum Images Text -->
+        <!-- Photo Section -->
         <TextView
-            android:id="@+id/tvMaxImages"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/maximum_images"
-            android:textSize="14sp"
+            android:text="Capture Incident Photos (1-3)"
             android:textStyle="bold"
             android:textColor="@color/gray_dark"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="8dp" />
 
-        <!-- Animal Type Spinner -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <ImageView
+                android:id="@+id/ivPhotoIcon"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:src="@drawable/ic_camera_circle"
+                android:background="@drawable/circle_background"
+                android:padding="20dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/tvImageCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Images captured: 0/3"
+                android:textColor="@color/gray_text" />
+        </LinearLayout>
+
+        <!-- Dropdowns -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Animal Details"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp" />
+
         <Spinner
             android:id="@+id/spinnerAnimalType"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:background="@drawable/spinner_background"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:spinnerMode="dropdown"
+            android:background="@drawable/input_field_background"
+            android:layout_marginBottom="12dp" />
+
+        <Spinner
+            android:id="@+id/spinnerCondition"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@drawable/input_field_background"
             android:layout_marginBottom="16dp" />
 
-        <!-- Condition Spinner -->
+        <!-- Location Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Incident Location"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
 
-        <!-- Location Input -->
+        <Button
+            android:id="@+id/btnFetchLocation"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="FETCH CURRENT LOCATION"
+            android:textColor="@color/brown_dark"
+            android:backgroundTint="#F5F5F5"
+            app:cornerRadius="12dp"
+            android:layout_marginBottom="8dp" />
+
         <EditText
             android:id="@+id/etLocation"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:hint="@string/hint_location"
-            android:inputType="text"
-            android:background="@drawable/input_field_background_gray"
-            android:paddingStart="48dp"
-            android:paddingEnd="16dp"
-            android:textSize="16sp"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:hint="Click fetch location above"
+            android:background="@drawable/input_field_background"
+            android:padding="16dp"
+            android:clickable="false"
+            android:focusable="false"
+            android:textSize="14sp"
             android:textColor="@color/gray_dark"
-            android:textColorHint="@color/gray_text"
-            android:drawableStart="@drawable/ic_location"
-            android:drawablePadding="12dp"
             android:layout_marginBottom="16dp" />
 
-        <!-- Description Input (Multiline) -->
+        <!-- Description -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Additional Description"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
         <EditText
             android:id="@+id/etDescription"
             android:layout_width="match_parent"
             android:layout_height="120dp"
-            android:hint="@string/hint_description"
-            android:inputType="textMultiLine"
-            android:gravity="top|start"
-            android:background="@drawable/input_field_background_gray"
+            android:hint="Describe the situation..."
+            android:gravity="top"
+            android:background="@drawable/input_field_background"
             android:padding="16dp"
-            android:textSize="16sp"
-            android:textColor="@color/gray_dark"
-            android:textColorHint="@color/gray_text"
-            android:layout_marginBottom="24dp"
-            android:maxLines="5"
-            android:scrollbars="vertical" />
+            android:inputType="textMultiLine"
+            android:layout_marginBottom="24dp" />
 
-        <!-- Submit Report Button -->
         <Button
             android:id="@+id/btnSubmitReport"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="@string/submit_report"
-            android:textSize="18sp"
+            android:layout_height="60dp"
+            android:text="SUBMIT REPORT"
             android:textStyle="bold"
             android:textColor="@android:color/white"
-            android:background="@drawable/btn_rounded_yellow"
-            android:elevation="4dp"
-            android:textAllCaps="false" />
+            android:backgroundTint="@color/yellow_primary"
+            app:cornerRadius="30dp" />
 
     </LinearLayout>
-
 </ScrollView>
