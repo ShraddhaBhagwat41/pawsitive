@@ -12,7 +12,6 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -21,12 +20,13 @@ import androidx.core.content.ContextCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.pawsitive.app.LoginActivity;
 import com.pawsitive.app.R;
-import com.pawsitive.app.network.NetworkManager;
 import com.pawsitive.app.network.ApiService;
+import com.pawsitive.app.network.NetworkManager;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,8 +43,8 @@ public class NGORegistrationActivity extends AppCompatActivity {
     private ProgressBar progressNgo;
     private ScrollView scrollView;
 
-    private Uri profilePhotoUri = null;
-    private Uri certificateUri = null;
+    private Uri profilePhotoUri;
+    private Uri certificateUri;
 
     private NetworkManager networkManager;
     private FirebaseStorage storage;
@@ -54,7 +54,8 @@ public class NGORegistrationActivity extends AppCompatActivity {
     private ActivityResultLauncher<String> profilePhotoPicker;
     private ActivityResultLauncher<String> certificatePicker;
 
-    private String email, password;
+    private String email;
+    private String password;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,38 +77,31 @@ public class NGORegistrationActivity extends AppCompatActivity {
         etNgoPhone = findViewById(R.id.etNgoPhone);
         etNgoAddress = findViewById(R.id.etNgoAddress);
         etNgoLicense = findViewById(R.id.etNgoLicense);
+        etNgoDescription = findViewById(R.id.etNgoDescription);
         btnUploadCertificate = findViewById(R.id.btnUploadCertificate);
         tvCertificateStatus = findViewById(R.id.tvCertificateStatus);
-        etNgoDescription = findViewById(R.id.etNgoDescription);
         btnSendForVerification = findViewById(R.id.btnSendForVerification);
         tvNgoStatusMessage = findViewById(R.id.tvNgoStatusMessage);
         tvLoginRedirect = findViewById(R.id.tvLoginRedirect);
         progressNgo = findViewById(R.id.progressNgo);
 
-        profilePhotoPicker = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                uri -> {
-                    if (uri != null) {
-                        profilePhotoUri = uri;
-                        ivNgoProfilePhoto.setImageURI(uri);
-                    }
-                }
-        );
+        profilePhotoPicker = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+            if (uri != null) {
+                profilePhotoUri = uri;
+                ivNgoProfilePhoto.setImageURI(uri);
+            }
+        });
 
-        certificatePicker = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                uri -> {
-                    if (uri != null) {
-                        certificateUri = uri;
-                        tvCertificateStatus.setText("Certificate selected ✓");
-                    }
-                }
-        );
+        certificatePicker = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+            if (uri != null) {
+                certificateUri = uri;
+                tvCertificateStatus.setText("Certificate selected");
+            }
+        });
 
         btnChangeNgoPhoto.setOnClickListener(v -> profilePhotoPicker.launch("image/*"));
         btnUploadCertificate.setOnClickListener(v -> certificatePicker.launch("*/*"));
         btnSendForVerification.setOnClickListener(v -> performRegistrationFlow());
-        
         tvLoginRedirect.setOnClickListener(v -> {
             Intent intent = new Intent(NGORegistrationActivity.this, LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -117,42 +111,55 @@ public class NGORegistrationActivity extends AppCompatActivity {
     }
 
     private void performRegistrationFlow() {
-        String name = etNgoName.getText().toString().trim();
-        String phone = etNgoPhone.getText().toString().trim();
-        String address = etNgoAddress.getText().toString().trim();
-        String license = etNgoLicense.getText().toString().trim();
-        String description = etNgoDescription.getText().toString().trim();
+        final String name = etNgoName.getText().toString().trim();
+        final String phone = etNgoPhone.getText().toString().trim();
+        final String address = etNgoAddress.getText().toString().trim();
+        final String license = etNgoLicense.getText().toString().trim();
+        final String description = etNgoDescription.getText().toString().trim();
 
         if (name.isEmpty() || phone.isEmpty() || address.isEmpty() || license.isEmpty()) {
             showError("Please fill all required fields");
+            return;
+        }
+        if (email == null || password == null) {
+            showError("Missing signup credentials. Please register again.");
             return;
         }
 
         setLoading(true);
         tvNgoStatusMessage.setText("Registering...");
 
-        // 1. Check if user already exists in Auth or create new
-        if (mAuth.getCurrentUser() != null && email.equals(mAuth.getCurrentUser().getEmail())) {
-            // User already logged in (failed previously at file step)
+        if (mAuth.getCurrentUser() != null && email.equalsIgnoreCase(mAuth.getCurrentUser().getEmail())) {
             proceedWithUploads(mAuth.getCurrentUser().getUid(), name, phone, address, license, description);
-        } else {
-            mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful() && mAuth.getCurrentUser() != null) {
-                        proceedWithUploads(mAuth.getCurrentUser().getUid(), name, phone, address, license, description);
-                    } else {
-                        showError("Registration Error: " + (task.getException() != null ? task.getException().getMessage() : "Failed"));
-                    }
-                });
+            return;
         }
+
+        // Try sign-in first; if account does not exist, create it.
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnSuccessListener(authResult -> {
+                    if (authResult.getUser() != null) {
+                        proceedWithUploads(authResult.getUser().getUid(), name, phone, address, license, description);
+                    } else {
+                        showError("Unable to continue registration");
+                    }
+                })
+                .addOnFailureListener(e -> mAuth.createUserWithEmailAndPassword(email, password)
+                        .addOnSuccessListener(createResult -> {
+                            if (createResult.getUser() != null) {
+                                proceedWithUploads(createResult.getUser().getUid(), name, phone, address, license, description);
+                            } else {
+                                showError("Unable to create account");
+                            }
+                        })
+                        .addOnFailureListener(createError -> showError("Registration Error: " + createError.getMessage()))
+                );
     }
 
     private void proceedWithUploads(String uid, String name, String phone, String address, String license, String description) {
         tvNgoStatusMessage.setText("Uploading documents...");
         if (profilePhotoUri != null) {
-            uploadFile("ngo_docs/" + uid + "/profile.jpg", profilePhotoUri, profileUrl -> {
-                uploadCertificate(uid, name, phone, address, license, description, profileUrl);
-            });
+            uploadFile("ngo_docs/" + uid + "/profile.jpg", profilePhotoUri, profileUrl ->
+                    uploadCertificate(uid, name, phone, address, license, description, profileUrl));
         } else {
             uploadCertificate(uid, name, phone, address, license, description, null);
         }
@@ -160,22 +167,16 @@ public class NGORegistrationActivity extends AppCompatActivity {
 
     private void uploadCertificate(String uid, String name, String phone, String address, String license, String description, String profileUrl) {
         if (certificateUri != null) {
-            uploadFile("ngo_docs/" + uid + "/certificate", certificateUri, certUrl -> {
-                tvNgoStatusMessage.setText("Finalizing registration...");
-                callBackendRegister(uid, name, phone, address, license, description, profileUrl, certUrl);
-            });
+            uploadFile("ngo_docs/" + uid + "/certificate", certificateUri, certUrl ->
+                    callBackendRegister(uid, name, phone, address, license, description, profileUrl, certUrl));
         } else {
             callBackendRegister(uid, name, phone, address, license, description, profileUrl, null);
         }
     }
 
     private void callBackendRegister(String uid, String name, String phone, String address, String license, String description, String profileUrl, String certUrl) {
-        // Try to derive lat/lng from the address now so incident map can show nearby NGOs.
-        // If geocoding fails, we still register; admin/NGO can update location later.
-        Double[] latLng = geocodeAddress(address);
-
         ApiService.NGORegistrationRequest request = new ApiService.NGORegistrationRequest();
-        request.uid = uid; // Pass the UID so backend knows which profile to save
+        request.uid = uid;
         request.email = email;
         request.password = password;
         request.organization_name = name;
@@ -186,16 +187,16 @@ public class NGORegistrationActivity extends AppCompatActivity {
         request.profile_photo_url = profileUrl;
         request.certificate_url = certUrl;
 
+        Double[] latLng = geocodeAddress(address);
+
         networkManager.registerNGO(request, new NetworkManager.ApiCallback<ApiService.RegisterResponse>() {
             @Override
             public void onSuccess(ApiService.RegisterResponse response) {
-                // Save/merge NGO location data in Firestore for map discovery.
                 saveNgoProfileToFirestore(uid, name, phone, address, profileUrl, certUrl, latLng[0], latLng[1], () -> {
                     setLoading(false);
                     tvNgoStatusMessage.setVisibility(View.VISIBLE);
                     tvNgoStatusMessage.setTextColor(ContextCompat.getColor(NGORegistrationActivity.this, R.color.green_success));
-                    tvNgoStatusMessage.setText("details sent for verification to admin.\nWill receive a mail and can check your status through login");
-
+                    tvNgoStatusMessage.setText("Details sent for verification to admin. Check your status through login.");
                     tvLoginRedirect.setVisibility(View.VISIBLE);
                     btnSendForVerification.setText("SENT FOR VERIFICATION");
                     btnSendForVerification.setEnabled(false);
@@ -214,7 +215,9 @@ public class NGORegistrationActivity extends AppCompatActivity {
         StorageReference ref = storage.getReference().child(path);
         ref.putFile(uri)
                 .continueWithTask(task -> {
-                    if (!task.isSuccessful()) throw task.getException();
+                    if (!task.isSuccessful()) {
+                        throw task.getException() != null ? task.getException() : new RuntimeException("Upload failed");
+                    }
                     return ref.getDownloadUrl();
                 })
                 .addOnSuccessListener(downloadUri -> successListener.onSuccess(downloadUri.toString()))
@@ -222,6 +225,10 @@ public class NGORegistrationActivity extends AppCompatActivity {
     }
 
     private Double[] geocodeAddress(String address) {
+        if (address == null || address.trim().isEmpty()) {
+            return new Double[]{null, null};
+        }
+
         try {
             Geocoder geocoder = new Geocoder(this, Locale.getDefault());
             List<Address> results = geocoder.getFromLocationName(address, 1);
@@ -229,47 +236,39 @@ public class NGORegistrationActivity extends AppCompatActivity {
                 Address a = results.get(0);
                 return new Double[]{a.getLatitude(), a.getLongitude()};
             }
-        } catch (IOException ignored) {
-            // Network or service unavailable; skip lat/lng for now.
-        } catch (IllegalArgumentException ignored) {
-            // Bad address input.
+        } catch (IOException | IllegalArgumentException ignored) {
+            // Geocoding is best-effort only.
         }
         return new Double[]{null, null};
     }
 
-    private void saveNgoProfileToFirestore(
-            String uid,
-            String name,
-            String phone,
-            String address,
-            String profileUrl,
-            String certUrl,
-            Double latitude,
-            Double longitude,
-            Runnable onComplete
-    ) {
+    private void saveNgoProfileToFirestore(String uid, String name, String phone, String address, String profileUrl, String certUrl,
+                                           Double latitude, Double longitude, Runnable onComplete) {
         Map<String, Object> data = new HashMap<>();
         data.put("uid", uid);
         data.put("organization_name", name);
+        data.put("ngo_email", email);
         data.put("phone", phone);
         data.put("address", address);
+        data.put("license_number", licenseSafe());
+        data.put("verification_status", "PENDING");
+        data.put("email_verified", false);
         if (profileUrl != null) data.put("profile_photo_url", profileUrl);
         if (certUrl != null) data.put("certificate_url", certUrl);
         if (latitude != null && longitude != null) {
             data.put("latitude", latitude);
             data.put("longitude", longitude);
         }
-        data.put("status", "PENDING");
 
-        // Use UID as document id so it is stable and easy to update later.
         db.collection("ngo_profiles")
                 .document(uid)
-                .set(data, com.google.firebase.firestore.SetOptions.merge())
+                .set(data, SetOptions.merge())
                 .addOnSuccessListener(unused -> onComplete.run())
-                .addOnFailureListener(e -> {
-                    // Firestore save failure shouldn't block user; still allow flow to complete.
-                    onComplete.run();
-                });
+                .addOnFailureListener(e -> onComplete.run());
+    }
+
+    private String licenseSafe() {
+        return etNgoLicense.getText() != null ? etNgoLicense.getText().toString().trim() : "";
     }
 
     private void showError(String message) {
@@ -283,7 +282,7 @@ public class NGORegistrationActivity extends AppCompatActivity {
     private void setLoading(boolean isLoading) {
         progressNgo.setVisibility(isLoading ? View.VISIBLE : View.GONE);
         btnSendForVerification.setEnabled(!isLoading);
-        tvNgoStatusMessage.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        tvNgoStatusMessage.setVisibility(View.VISIBLE);
     }
 
     private void scrollToBottom() {

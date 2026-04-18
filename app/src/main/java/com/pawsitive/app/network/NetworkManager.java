@@ -12,10 +12,13 @@ public class NetworkManager {
 
     private ApiService apiService;
     private TokenManager tokenManager;
+    
+    // Use current LAN IP so physical devices can hit the backend directly over Wi-Fi.
+    public static final String BASE_URL = "http://192.168.0.100:3000/";
 
     public NetworkManager(Context context) {
         this.apiService = new retrofit2.Retrofit.Builder()
-                .baseUrl("http://10.143.57.191:3000/")
+                .baseUrl(BASE_URL)
                 .client(ApiClient.getClient(context))
                 .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
                 .build()
@@ -268,6 +271,25 @@ public class NetworkManager {
             }
             @Override
             public void onFailure(Call<ApiService.BasicResponse> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    public void notifyNearbyNgos(double incidentLat, double incidentLng, String incidentId, String animalType, ApiCallback<ApiService.NotifyNgosResponse> callback) {
+        ApiService.NotifyNgosRequest request = new ApiService.NotifyNgosRequest(incidentLat, incidentLng, incidentId, animalType);
+        apiService.notifyNearbyNgos(request).enqueue(new Callback<ApiService.NotifyNgosResponse>() {
+            @Override
+            public void onResponse(Call<ApiService.NotifyNgosResponse> call, Response<ApiService.NotifyNgosResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError(getError(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiService.NotifyNgosResponse> call, Throwable t) {
                 callback.onError(t.getMessage());
             }
         });

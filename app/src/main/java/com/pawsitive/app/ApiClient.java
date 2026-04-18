@@ -36,6 +36,7 @@ public class ApiClient {
                             if (token != null) {
                                 builder.addHeader("Authorization", "Bearer " + token);
                             }
+                            builder.addHeader("Bypass-Tunnel-Reminder", "true");
 
                             Request request = builder.build();
                             Response response = chain.proceed(request);

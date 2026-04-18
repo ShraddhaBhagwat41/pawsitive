@@ -2,7 +2,10 @@
   "name": "pawsitive-backend",
   "version": "1.0.0",
   "description": "REST API for Pawsitive App",
-  "main": "server.js",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"

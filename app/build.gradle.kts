@@ -67,7 +67,6 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging:23.4.1")
     implementation("androidx.work:work-runtime:2.9.0")
 
-    testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")

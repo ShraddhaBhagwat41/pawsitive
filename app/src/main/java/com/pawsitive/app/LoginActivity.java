@@ -13,10 +13,11 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.pawsitive.app.ngo.NGOHomeActivity;
 import com.pawsitive.app.admin.AdminHomeActivity;
-import com.pawsitive.app.network.NetworkManager;
 import com.pawsitive.app.network.ApiService;
+import com.pawsitive.app.network.NetworkManager;
+import com.pawsitive.app.ngo.NGOHomeActivity;
+import com.pawsitive.app.staff.StaffDashboardActivity;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -33,13 +34,9 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Initialize Network Manager
         networkManager = new NetworkManager(this);
-
-        // Firebase Auth (needed for Firebase Storage rules that require authentication)
         firebaseAuth = FirebaseAuth.getInstance();
 
-        // Initialize views
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
@@ -47,19 +44,12 @@ public class LoginActivity extends AppCompatActivity {
         tvSignup = findViewById(R.id.tvSignup);
         progressBar = findViewById(R.id.progressBar);
 
-        // Login button click listener
         btnLogin.setOnClickListener(v -> loginUser());
 
-        // Forgot Password click listener (placeholder)
-        tvForgotPassword.setOnClickListener(v -> 
-            Toast.makeText(LoginActivity.this, "Forgot Password clicked", Toast.LENGTH_SHORT).show()
-        );
+        tvForgotPassword.setOnClickListener(v ->
+                Toast.makeText(LoginActivity.this, "Forgot Password clicked", Toast.LENGTH_SHORT).show());
 
-        // Signup text click listener
-        tvSignup.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
-            startActivity(intent);
-        });
+        tvSignup.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, SignupActivity.class)));
     }
 
     private void loginUser() {
@@ -71,7 +61,6 @@ public class LoginActivity extends AppCompatActivity {
             etEmail.requestFocus();
             return;
         }
-
         if (TextUtils.isEmpty(password)) {
             etPassword.setError("Password is required");
             etPassword.requestFocus();
@@ -81,11 +70,10 @@ public class LoginActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         btnLogin.setEnabled(false);
 
-        // Call REST API for login
         networkManager.login(email, password, new NetworkManager.ApiCallback<ApiService.LoginResponse>() {
             @Override
             public void onSuccess(ApiService.LoginResponse response) {
-                // Also sign into FirebaseAuth so Firebase Storage operations have request.auth
+                // Keep Firebase auth in sync for storage/firestore rules that rely on request.auth.
                 firebaseAuth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener(task -> {
                             progressBar.setVisibility(View.GONE);
@@ -94,12 +82,10 @@ public class LoginActivity extends AppCompatActivity {
                             if (!task.isSuccessful()) {
                                 String msg = task.getException() != null ? task.getException().getMessage() : "Unknown Firebase auth error";
                                 Toast.makeText(LoginActivity.this, "Login ok, but Firebase auth failed: " + msg, Toast.LENGTH_LONG).show();
-                                // Still continue to home; Firestore/Storage may fail if rules require auth.
                             } else {
                                 Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
                             }
-
-                            goToHome(response.role);
+                            goToHome(response != null ? response.role : null);
                         });
             }
 
@@ -113,20 +99,18 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void goToHome(String role) {
-        Intent intent = null;
-        
+        Intent intent;
         if ("ADMIN".equalsIgnoreCase(role)) {
             intent = new Intent(LoginActivity.this, AdminHomeActivity.class);
         } else if ("NGO".equalsIgnoreCase(role)) {
             intent = new Intent(LoginActivity.this, NGOHomeActivity.class);
+        } else if ("STAFF".equalsIgnoreCase(role)) {
+            intent = new Intent(LoginActivity.this, StaffDashboardActivity.class);
         } else {
             intent = new Intent(LoginActivity.this, HomeActivity.class);
         }
-        
-        if (intent != null) {
-            startActivity(intent);
-            finish();
-        }
+        startActivity(intent);
+        finish();
     }
 }
 

@@ -58,11 +58,14 @@ public class HomeActivity extends AppCompatActivity {
     private EditText etSearch;
     private TextView tvViewAll;
     private RecyclerView rvSavedPets;
+    private RecyclerView rvRescueStories;
     private Button btnReportIncident, btnEmergency, btnAddPet;
     private BottomNavigationView bottomNavigation;
 
     private PetAdapter petAdapter;
     private List<Pet> savedPetsList;
+    private RescueStoryAdapter rescueStoryAdapter;
+    private List<RescueStory> rescueStories;
     private String selectedCategory = "All";
     private SwipeRefreshLayout swipeRefreshLayout;
     
@@ -88,11 +91,24 @@ public class HomeActivity extends AppCompatActivity {
         // Setup saved pets list
         setupSavedPets();
 
+        // Setup rescue stories feed
+        setupRescueStories();
+
         // Setup listeners
         setupListeners();
 
+        // Staff notification flow: open assigned task details when launched from FCM.
+        handleAssignmentIntent(getIntent());
+
         // Setup Swipe Gestures
         setupSwipeGestures();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleAssignmentIntent(intent);
     }
 
     @Override
@@ -118,6 +134,7 @@ public class HomeActivity extends AppCompatActivity {
         etSearch = findViewById(R.id.etSearch);
         tvViewAll = findViewById(R.id.tvViewAll);
         rvSavedPets = findViewById(R.id.rvSavedPets);
+        rvRescueStories = findViewById(R.id.rvRescueStories);
 
         btnReportIncident = findViewById(R.id.btnReportIncident);
         btnEmergency = findViewById(R.id.btnEmergency);
@@ -203,6 +220,37 @@ public class HomeActivity extends AppCompatActivity {
 
         // Ensure the initial view matches the default category
         filterPets(selectedCategory);
+    }
+
+    private void setupRescueStories() {
+        rescueStories = new ArrayList<>();
+
+        rescueStories.add(new RescueStory(
+                "Bruno",
+                "Dog",
+                "Injured",
+                "Bruno was found near traffic with a leg wound. Local volunteers got him treatment and he is now healthy and playful.",
+                RescueStory.Status.RECOVERED,
+                "Navi Mumbai",
+                "2 days ago",
+                R.drawable.pet_buddy
+        ));
+
+        rescueStories.add(new RescueStory(
+                "Mittens",
+                "Cat",
+                "Sick",
+                "Mittens was rescued during heavy rain. After care and recovery support, she was adopted into a loving home.",
+                RescueStory.Status.ADOPTED,
+                "Thane",
+                "5 days ago",
+                R.drawable.pet_whiskers
+        ));
+
+        rvRescueStories.setLayoutManager(new LinearLayoutManager(this));
+        rvRescueStories.setNestedScrollingEnabled(false);
+        rescueStoryAdapter = new RescueStoryAdapter(this, rescueStories);
+        rvRescueStories.setAdapter(rescueStoryAdapter);
     }
 
     private void setupSwipeGestures() {
@@ -541,6 +589,49 @@ public class HomeActivity extends AppCompatActivity {
                   });
             }
         });
+    }
+
+    private void handleAssignmentIntent(Intent intent) {
+        if (intent == null) return;
+        String type = intent.getStringExtra("type");
+        if (!"ASSIGNED".equalsIgnoreCase(type)) return;
+
+        String animalType = intent.getStringExtra("animalType");
+        String condition = intent.getStringExtra("condition");
+        String reportId = intent.getStringExtra("reportId");
+        String lat = intent.getStringExtra("lat");
+        String lng = intent.getStringExtra("lng");
+
+        String details = "Report ID: " + (reportId != null ? reportId : "N/A") + "\n"
+                + "Animal Type: " + (animalType != null ? animalType : "Animal") + "\n"
+                + "Condition: " + (condition != null ? condition : "Unknown") + "\n"
+                + "Location: " + ((lat != null && lng != null) ? (lat + ", " + lng) : "Not available");
+
+        currentDialog = new AlertDialog.Builder(this)
+                .setTitle("Assigned Task")
+                .setMessage(details)
+                .setPositiveButton("Navigate", (dialog, which) -> openMapNavigation(lat, lng))
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    private void openMapNavigation(String lat, String lng) {
+        if (lat == null || lng == null || lat.isEmpty() || lng.isEmpty()) {
+            Toast.makeText(this, "Location not available for navigation", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Uri gmmIntentUri = Uri.parse("google.navigation:q=" + lat + "," + lng);
+        Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+        mapIntent.setPackage("com.google.android.apps.maps");
+        if (mapIntent.resolveActivity(getPackageManager()) != null) {
+            startActivity(mapIntent);
+            return;
+        }
+
+        Intent fallbackIntent = new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng));
+        startActivity(fallbackIntent);
     }
 
     @Override

@@ -5,21 +5,26 @@
     <color name="yellow_dark">#F5B800</color>
     <color name="brown_primary">#6B4423</color>
     <color name="brown_dark">#5A3A1F</color>
-    
+
     <!-- Text Colors -->
     <color name="gray_text">#9E9E9E</color>
     <color name="gray_dark">#424242</color>
     <color name="gray_light">#E0E0E0</color>
-    
+
     <!-- Background Colors -->
     <color name="white">#FFFFFF</color>
     <color name="background_light">#F5F5F5</color>
-    
+    <color name="staff_bg">#F7F8FC</color>
+    <color name="staff_active_card_bg">#FFF7DB</color>
+
     <!-- Status Colors -->
     <color name="green_success">#4CAF50</color>
     <color name="blue_pending">#2196F3</color>
     <color name="red_primary">#D32F2F</color>
-    
+    <color name="staff_status_assigned">#D4A90A</color>
+    <color name="staff_status_on_way">#2F80ED</color>
+    <color name="staff_status_done">#219653</color>
+
     <!-- Status Bar -->
     <color name="colorPrimary">#FFC727</color>
     <color name="colorPrimaryDark">#F5B800</color>

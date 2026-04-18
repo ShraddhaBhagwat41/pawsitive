@@ -1,90 +1,172 @@
-const functions = require("firebase-functions");
+const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
+
 admin.initializeApp();
+const db = admin.firestore();
 
-exports.notifyNGOsOnNewReport = functions.firestore
-    .document("incidents/{incidentId}")
-    .onCreate(async (snap, context) => {
-        const newReport = snap.data();
-        console.log("New report detected:", newReport);
+const SEARCH_RADIUS_METERS = 10000;
 
-        // 1. You could query nearby NGOs based on location logic
-        // For simplicity, we fetch all NGOs with an fcmToken or apply basic bounds filtering
-        const db = admin.firestore();
-        const ngosSnapshot = await db.collection("ngo_profiles").get();
+function toNumber(value) {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+        const parsed = Number(value);
+        return Number.isNaN(parsed) ? null : parsed;
+    }
+    return null;
+}
 
-        const tokens = [];
-        ngosSnapshot.forEach((doc) => {
-            const ngoData = doc.data();
-            if (ngoData.fcmToken) {
-                // Here you can calculate distance between ngoData.latitude/longitude
-                // and newReport.location.lat/lng and push to token array if within radius
-                tokens.push(ngoData.fcmToken);
-            }
+function haversineMeters(lat1, lng1, lat2, lng2) {
+    const R = 6371e3;
+    const p1 = lat1 * Math.PI / 180;
+    const p2 = lat2 * Math.PI / 180;
+    const dp = (lat2 - lat1) * Math.PI / 180;
+    const dl = (lng2 - lng1) * Math.PI / 180;
+
+    const a = Math.sin(dp / 2) * Math.sin(dp / 2)
+        + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) * Math.sin(dl / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+async function loadNgosWithTokens() {
+    const [ngosSnap, ngoProfilesSnap] = await Promise.all([
+        db.collection("ngos").where("isVerified", "==", true).get().catch(() => null),
+        db.collection("ngo_profiles").get()
+    ]);
+
+    const ngoMap = new Map();
+
+    if (ngosSnap && !ngosSnap.empty) {
+        ngosSnap.forEach((doc) => {
+            const data = doc.data() || {};
+            const location = data.location || {};
+            ngoMap.set(doc.id, {
+                id: doc.id,
+                fcmToken: data.fcmToken || null,
+                lat: toNumber(location.lat),
+                lng: toNumber(location.lng),
+                isVerified: data.isVerified === true
+            });
         });
+    }
 
-        if (tokens.length === 0) {
-            console.log("No NGO tokens found.");
+    if (ngoProfilesSnap && !ngoProfilesSnap.empty) {
+        ngoProfilesSnap.forEach((doc) => {
+            const data = doc.data() || {};
+            const existing = ngoMap.get(doc.id) || { id: doc.id };
+            const lat = toNumber(data.latitude);
+            const lng = toNumber(data.longitude);
+
+            ngoMap.set(doc.id, {
+                id: doc.id,
+                fcmToken: existing.fcmToken || data.fcmToken || null,
+                lat: existing.lat != null ? existing.lat : lat,
+                lng: existing.lng != null ? existing.lng : lng,
+                isVerified: existing.isVerified === true || data.verification_status === "VERIFIED"
+            });
+        });
+    }
+
+    return Array.from(ngoMap.values()).filter((ngo) => ngo.fcmToken && ngo.isVerified);
+}
+
+exports.notifyNearbyNgosOnReportCreate = functions.firestore
+    .document("reports/{reportId}")
+    .onCreate(async (snap, context) => {
+        const report = snap.data() || {};
+        const reportId = context.params.reportId;
+
+        const location = report.location || {};
+        const incidentLat = toNumber(location.lat);
+        const incidentLng = toNumber(location.lng);
+
+        if (incidentLat == null || incidentLng == null) {
+            console.log("Skipping notification: report has no valid lat/lng", reportId);
             return null;
         }
 
-        // 2. Prepare Notification Payload
-        const animalType = newReport.animalType || "An animal";
+        const animalType = report.animalType || "Animal";
+        const condition = report.condition || "Unknown";
+
+        const ngos = await loadNgosWithTokens();
+
+        const targetNgos = ngos.filter((ngo) => {
+            if (ngo.lat == null || ngo.lng == null) return false;
+            const distance = haversineMeters(incidentLat, incidentLng, ngo.lat, ngo.lng);
+            return distance <= SEARCH_RADIUS_METERS;
+        });
+
+        if (targetNgos.length === 0) {
+            await snap.ref.set({
+                notifiedNGOs: [],
+                notificationMeta: {
+                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                    sentCount: 0,
+                    successCount: 0,
+                    failureCount: 0,
+                    message: "No nearby verified NGOs"
+                }
+            }, { merge: true });
+            return null;
+        }
+
+        const tokens = targetNgos.map((ngo) => ngo.fcmToken);
+        const ngoIds = targetNgos.map((ngo) => ngo.id);
+
         const payload = {
             notification: {
-                title: "🚨 Emergency: " + animalType + " in Need!",
-                body: "A new incident has been reported near your location.",
+                title: "🚨 Animal in Need Nearby",
+                body: "A new incident has been reported near your location"
             },
             data: {
-                reportId: context.params.incidentId,
-                type: "NEW_REPORT"
+                reportId,
+                animalType: String(animalType),
+                condition: String(condition),
+                location: JSON.stringify(location),
+                lat: String(incidentLat),
+                lng: String(incidentLng)
+            },
+            android: {
+                priority: "high",
+                notification: {
+                    sound: "default",
+                    channelId: "fcm_default_channel"
+                }
             }
         };
 
-        // 3. Send to tokens
-        try {
-            const response = await admin.messaging().sendToDevice(tokens, payload);
-            console.log("Successfully sent notifications:", response);
-        } catch (error) {
-            console.error("Error sending notifications:", error);
-        }
+        const response = await admin.messaging().sendEachForMulticast({
+            tokens,
+            ...payload
+        });
 
-        return null;
-    });
-
-exports.notifyUserOnAccept = functions.firestore
-    .document("incidents/{incidentId}")
-    .onUpdate(async (change, context) => {
-        const newValue = change.after.data();
-        const previousValue = change.before.data();
-
-        // Check if status changed to ACCEPTED
-        if (newValue.status === "ACCEPTED" && previousValue.status !== "ACCEPTED") {
-            const userId = newValue.reportedBy; // Assuming the reporter's ID is saved
-            if (!userId) return null;
-
-            const userDoc = await admin.firestore().collection("users").doc(userId).get();
-            if (!userDoc.exists) return null;
-
-            const userData = userDoc.data();
-            if (userData.fcmToken) {
-                const payload = {
-                    notification: {
-                        title: "Help is on the way! 🚑",
-                        body: "An NGO has accepted your rescue report.",
-                    },
-                    data: {
-                        reportId: context.params.incidentId,
-                        type: "NGO_ACCEPTED"
-                    }
-                };
-
-                try {
-                    await admin.messaging().sendToDevice(userData.fcmToken, payload);
-                } catch (error) {
-                    console.error("Error sending accept notification:", error);
-                }
+        // Remove invalid tokens from both collections.
+        const cleanupPromises = [];
+        response.responses.forEach((r, index) => {
+            if (!r.success && r.error && (
+                r.error.code === "messaging/registration-token-not-registered" ||
+                r.error.code === "messaging/invalid-registration-token"
+            )) {
+                const ngoId = ngoIds[index];
+                cleanupPromises.push(
+                    db.collection("ngos").doc(ngoId).set({ fcmToken: admin.firestore.FieldValue.delete() }, { merge: true })
+                );
+                cleanupPromises.push(
+                    db.collection("ngo_profiles").doc(ngoId).set({ fcmToken: admin.firestore.FieldValue.delete() }, { merge: true })
+                );
             }
-        }
+        });
+        await Promise.all(cleanupPromises);
+
+        await snap.ref.set({
+            notifiedNGOs: ngoIds,
+            notificationMeta: {
+                sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                sentCount: tokens.length,
+                successCount: response.successCount,
+                failureCount: response.failureCount
+            }
+        }, { merge: true });
+
         return null;
     });

@@ -1,6 +1,7 @@
 package com.pawsitive.app;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -12,12 +13,13 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import com.pawsitive.app.ngo.NGOHomeActivity;
-import com.pawsitive.app.admin.AdminHomeActivity;
-import com.pawsitive.app.user.UserHomeActivity;
+import com.google.firebase.auth.ActionCodeSettings;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.pawsitive.app.admin.AdminHomeActivity;
+import com.pawsitive.app.ngo.NGOHomeActivity;
+import com.pawsitive.app.user.UserHomeActivity;
 
 import java.util.regex.Pattern;
 
@@ -80,6 +82,20 @@ public class VerifyEmailActivity extends AppCompatActivity {
                 }
             }
         };
+        
+        // Handle deep link for email verification
+        Uri data = getIntent().getData();
+        if (data != null) {
+            String oobCode = data.getQueryParameter("oobCode");
+            if (oobCode != null) {
+                FirebaseAuth.getInstance().applyActionCode(oobCode)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            showVerifiedStatus();
+                        }
+                    });
+            }
+        }
     }
 
     @Override
@@ -192,20 +208,35 @@ public class VerifyEmailActivity extends AppCompatActivity {
     private void sendFirebaseVerificationEmail() {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
-            android.util.Log.d("VerifyEmail", "Verification email sent by backend during registration");
-            android.util.Log.d("VerifyEmail", "Email: " + user.getEmail());
-            tvVerifyMessage.setText(
-                "📧 Verification email sent!\n\n" +
-                "✓ Check your inbox (and spam folder) for a link from Pawsitive\n\n" +
-                "📱 If you're using your PHONE to click the link:\n" +
-                "   • Click the ✓ button in the email\n" +
-                "   • Your email will be verified instantly\n" +
-                "   • Return to this emulator app\n" +
-                "   • It will auto-detect the verification\n\n" +
-                "Refreshing verification status..."
-            );
-            tvVerifyMessage.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark));
-            Toast.makeText(VerifyEmailActivity.this, "Verification email sent to " + user.getEmail(), Toast.LENGTH_LONG).show();
+            // Use ActionCodeSettings to ensure the verification link opens in the app
+            ActionCodeSettings actionCodeSettings = ActionCodeSettings.newBuilder()
+                    .setUrl("https://pawsitive.page.link/verify") // TODO: Replace with your actual dynamic link if different
+                    .setHandleCodeInApp(true)
+                    .setAndroidPackageName(getPackageName(), true, null)
+                    .build();
+            user.sendEmailVerification(actionCodeSettings)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            android.util.Log.d("VerifyEmail", "Verification email sent by backend during registration");
+                            android.util.Log.d("VerifyEmail", "Email: " + user.getEmail());
+                            tvVerifyMessage.setText(
+                                    "\uD83D\uDCE7 Verification email sent!\n\n" +
+                                            "✓ Check your inbox (and spam folder) for a link from Pawsitive\n\n" +
+                                            "\uD83D\uDCF1 If you're using your PHONE to click the link:\n" +
+                                            "   • Click the ✓ button in the email\n" +
+                                            "   • Your email will be verified instantly\n" +
+                                            "   • Return to this emulator app\n" +
+                                            "   • It will auto-detect the verification\n\n" +
+                                            "Refreshing verification status..."
+                            );
+                            tvVerifyMessage.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark));
+                            Toast.makeText(VerifyEmailActivity.this, "Verification email sent to " + user.getEmail(), Toast.LENGTH_LONG).show();
+                        } else {
+                            android.util.Log.w("VerifyEmail", "Failed to send verification email");
+                            tvVerifyMessage.setText("⚠️ Failed to send verification email. Please try again later.");
+                            tvVerifyMessage.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark));
+                        }
+                    });
         } else {
             android.util.Log.w("VerifyEmail", "No current user to send verification email");
             tvVerifyMessage.setText("⚠️ Session error - please sign up again");

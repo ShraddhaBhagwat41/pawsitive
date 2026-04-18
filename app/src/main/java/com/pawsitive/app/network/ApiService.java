@@ -51,6 +51,9 @@ public interface ApiService {
     @DELETE("api/ngo/staff/{id}")
     Call<BasicResponse> deleteStaff(@Path("id") String id);
 
+    @POST("api/ngos/notify-nearby")
+    Call<NotifyNgosResponse> notifyNearbyNgos(@Body NotifyNgosRequest request);
+
     // --- Data Classes ---
 
     class CheckEmailRequest {
@@ -146,5 +149,23 @@ public interface ApiService {
     class StaffListResponse {
         public boolean success;
         public List<StaffProfile> data;
+    }
+
+    class NotifyNgosRequest {
+        public double incidentLat, incidentLng;
+        public String incidentId, animalType;
+
+        public NotifyNgosRequest(double incidentLat, double incidentLng, String incidentId, String animalType) {
+            this.incidentLat = incidentLat;
+            this.incidentLng = incidentLng;
+            this.incidentId = incidentId;
+            this.animalType = animalType;
+        }
+    }
+
+    class NotifyNgosResponse {
+        public boolean success;
+        public String message, error;
+        public int successCount, failureCount;
     }
 }

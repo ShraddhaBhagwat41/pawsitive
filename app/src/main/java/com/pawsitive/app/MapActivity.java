@@ -26,29 +26,23 @@ import java.util.Locale;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
+    private static final double SEARCH_RADIUS_METERS = 5000.0;
+
     private GoogleMap mMap;
     private double incidentLat;
     private double incidentLng;
     private FirebaseFirestore db;
 
-    // Radius for drawing circle and filtering NGOs (in meters)
-    private static final double SEARCH_RADIUS_METERS = 5000.0; 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Note: Make sure to create activity_map.xml with a fragment id="map" 
-        // using com.google.android.gms.maps.SupportMapFragment
         setContentView(R.layout.activity_map);
 
         db = FirebaseFirestore.getInstance();
-
         incidentLat = getIntent().getDoubleExtra("incidentLat", 0);
         incidentLng = getIntent().getDoubleExtra("incidentLng", 0);
 
-        // Required Google Maps setup
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         } else {
@@ -60,78 +54,55 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
 
+        if (incidentLat == 0 && incidentLng == 0) {
+            Toast.makeText(this, "Invalid incident location", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         LatLng incidentLocation = new LatLng(incidentLat, incidentLng);
 
-        // Add marker for incident reported
         mMap.addMarker(new MarkerOptions()
                 .position(incidentLocation)
                 .title("Reported Incident")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
 
-        // Draw a radius circle around the incident (5 km)
         mMap.addCircle(new CircleOptions()
                 .center(incidentLocation)
                 .radius(SEARCH_RADIUS_METERS)
-                .strokeWidth(2f)
                 .strokeColor(0x550000FF)
                 .fillColor(0x220000FF));
 
-        // Center map to incident location
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(incidentLocation, 12f));
-
         fetchNearbyNGOs(incidentLocation);
     }
 
-    /**
-     * Fetch NGOs from Firestore and plot them on the map.
-     */
     private void fetchNearbyNGOs(LatLng incidentLocation) {
-        // IMPORTANT: In this project, NGOs are stored under the "ngo_profiles" collection
-        // (see NGORegistrationActivity / IncidentMapActivity). Querying "ngos" will fail or return 0.
         db.collection("ngo_profiles").get().addOnCompleteListener(task -> {
             if (!task.isSuccessful() || task.getResult() == null) {
-                String msg = "Failed to load nearby NGOs";
-                if (task.getException() != null && task.getException().getMessage() != null) {
-                    msg += ": " + task.getException().getMessage();
-                } else {
-                    msg += ".";
-                }
-                Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Failed to load nearby NGOs", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             int ngoNotifiedCount = 0;
-
             for (QueryDocumentSnapshot document : task.getResult()) {
-                // Project schema:
-                //  - organization_name
-                //  - latitude
-                //  - longitude
-                //  - address
                 String name = document.getString("organization_name");
                 Double lat = document.getDouble("latitude");
                 Double lng = document.getDouble("longitude");
 
-                // If coordinates are missing (older records), derive them from address.
                 if ((lat == null || lng == null) || (lat == 0.0 && lng == 0.0)) {
-                    String address = document.getString("address");
-                    Double[] derived = geocodeAddress(address);
+                    Double[] derived = geocodeAddress(document.getString("address"));
                     lat = derived[0];
                     lng = derived[1];
                 }
 
-                if (lat == null || lng == null) continue;
+                if (lat == null || lng == null) {
+                    continue;
+                }
 
                 float[] results = new float[1];
-                Location.distanceBetween(
-                        incidentLocation.latitude, incidentLocation.longitude,
-                        lat, lng,
-                        results
-                );
-
+                Location.distanceBetween(incidentLocation.latitude, incidentLocation.longitude, lat, lng, results);
                 float distanceInMeters = results[0];
 
-                // If within 5km, add a marker for this NGO
                 if (distanceInMeters <= SEARCH_RADIUS_METERS) {
                     LatLng ngoLatLng = new LatLng(lat, lng);
                     mMap.addMarker(new MarkerOptions()
@@ -139,7 +110,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             .title(name != null ? name : "NGO")
                             .snippet("Distance: " + (int) (distanceInMeters / 1000) + " km")
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-
                     ngoNotifiedCount++;
                 }
             }
@@ -148,10 +118,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
     }
 
-    /**
-     * Best-effort geocoding for NGO address -> lat/lng.
-     * Note: Android Geocoder may return null if network/service unavailable.
-     */
     private Double[] geocodeAddress(String address) {
         if (address == null || address.trim().isEmpty()) {
             return new Double[]{null, null};
@@ -165,7 +131,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 return new Double[]{a.getLatitude(), a.getLongitude()};
             }
         } catch (IOException | IllegalArgumentException ignored) {
-            // Ignore and fallback to null; we simply won't plot that NGO.
+            // Ignore; we fall back to skipping that NGO marker.
         }
 
         return new Double[]{null, null};

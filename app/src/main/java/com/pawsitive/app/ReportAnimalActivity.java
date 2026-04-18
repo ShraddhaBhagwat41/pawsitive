@@ -33,8 +33,11 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.pawsitive.app.network.ApiService;
+import com.pawsitive.app.network.NetworkManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,6 +72,7 @@ public class ReportAnimalActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
     private FirebaseStorage storage;
+    private NetworkManager networkManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +81,7 @@ public class ReportAnimalActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
+        networkManager = new NetworkManager(this);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         ivBack = findViewById(R.id.ivBack);
@@ -169,6 +174,11 @@ public class ReportAnimalActivity extends AppCompatActivity {
                     } else {
                         Toast.makeText(this, "Location not found. Enable GPS.", Toast.LENGTH_SHORT).show();
                     }
+                })
+                .addOnFailureListener(e -> {
+                    btnFetchLocation.setEnabled(true);
+                    btnFetchLocation.setText("FETCH CURRENT LOCATION");
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -252,30 +262,57 @@ public class ReportAnimalActivity extends AppCompatActivity {
 
     private void saveToFirestore(List<String> urls) {
         Map<String, Object> data = new HashMap<>();
+        String animalType = spinnerAnimalType.getSelectedItem().toString();
+        String condition = spinnerCondition.getSelectedItem().toString();
         data.put("images", urls);
-        data.put("animalType", spinnerAnimalType.getSelectedItem().toString());
-        data.put("condition", spinnerCondition.getSelectedItem().toString());
+        data.put("animalType", animalType);
+        data.put("condition", condition);
         data.put("description", etDescription.getText().toString());
         data.put("timestamp", new Date());
+        data.put("createdAt", FieldValue.serverTimestamp());
+        data.put("notifiedNGOs", new ArrayList<String>());
+        data.put("status", "PENDING");
+
+        String uid = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
+        if (uid != null) {
+            data.put("reportedBy", uid);
+        }
+
         Map<String, Object> loc = new HashMap<>();
         loc.put("lat", incidentLocation.getLatitude());
         loc.put("lng", incidentLocation.getLongitude());
         loc.put("address", etLocation.getText().toString());
         data.put("location", loc);
-        data.put("status", "PENDING");
+        data.put("locationAddress", etLocation.getText().toString());
 
-        FirebaseFirestore.getInstance().collection("incidents").add(data).addOnSuccessListener(doc -> {
+        if (uid != null) {
+            FirebaseFirestore.getInstance().collection("users").document(uid).get()
+                    .addOnSuccessListener(userDoc -> {
+                        if (userDoc.exists()) {
+                            String reporterPhone = userDoc.getString("phone");
+                            String reporterName = userDoc.getString("full_name");
+                            if (reporterPhone != null && !reporterPhone.trim().isEmpty()) {
+                                data.put("reporterPhone", reporterPhone);
+                            }
+                            if (reporterName != null && !reporterName.trim().isEmpty()) {
+                                data.put("reporterName", reporterName);
+                            }
+                        }
+                        persistReport(data);
+                    })
+                    .addOnFailureListener(e -> persistReport(data));
+        } else {
+            persistReport(data);
+        }
+    }
+
+    private void persistReport(Map<String, Object> data) {
+        FirebaseFirestore.getInstance().collection("reports").add(data).addOnSuccessListener(doc -> {
+            notifyNearbyNgos(doc.getId());
             Toast.makeText(this, "Reported successfully", Toast.LENGTH_SHORT).show();
-
-            double lat = incidentLocation != null ? incidentLocation.getLatitude() : 0;
-            double lng = incidentLocation != null ? incidentLocation.getLongitude() : 0;
-            Log.d(TAG, "Starting IncidentMapActivity with lat=" + lat + ", lng=" + lng);
-
-            // Navigate to the incident map screen that shows nearby NGOs.
             Intent intent = new Intent(this, IncidentMapActivity.class);
-            // Match the keys expected by IncidentMapActivity ("lat" and "lng").
-            intent.putExtra("lat", lat);
-            intent.putExtra("lng", lng);
+            intent.putExtra("lat", incidentLocation.getLatitude());
+            intent.putExtra("lng", incidentLocation.getLongitude());
             startActivity(intent);
             finish();
         }).addOnFailureListener(e -> {
@@ -283,5 +320,33 @@ public class ReportAnimalActivity extends AppCompatActivity {
             btnSubmitReport.setText("SUBMIT REPORT");
             Toast.makeText(this, "Failed to save", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void notifyNearbyNgos(String incidentId) {
+        if (incidentLocation == null) {
+            return;
+        }
+
+        String animalType = spinnerAnimalType.getSelectedItem() != null
+                ? spinnerAnimalType.getSelectedItem().toString()
+                : "Animal";
+
+        networkManager.notifyNearbyNgos(
+                incidentLocation.getLatitude(),
+                incidentLocation.getLongitude(),
+                incidentId,
+                animalType,
+                new NetworkManager.ApiCallback<ApiService.NotifyNgosResponse>() {
+                    @Override
+                    public void onSuccess(ApiService.NotifyNgosResponse response) {
+                        Log.d(TAG, "NGO notify result: " + (response != null ? response.message : "success"));
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        Log.w(TAG, "Failed to notify nearby NGOs: " + errorMessage);
+                    }
+                }
+        );
     }
 }

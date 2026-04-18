@@ -20,9 +20,10 @@ try {
     } else {
         // Fallback: Initialize with just the project ID (works if running in Google Cloud or with ambient credentials)
         const serviceAccount = require('./serviceAccountKey.json');
+        const projectId = process.env.FIREBASE_PROJECT_ID || serviceAccount.project_id;
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
-            databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
+            databaseURL: `https://${projectId}.firebaseio.com`
         });
     }
     console.log('Firebase Admin SDK initialized successfully');
@@ -135,6 +136,7 @@ app.post('/api/auth/login', async (req, res) => {
         const userRefs = await db.collection('admin_accounts').where('email', '==', email).get();
         const ngoRefs = await db.collection('ngo_profiles').where('ngo_email', '==', email).get();
         const userProfileRefs = await db.collection('users').where('email', '==', email).get();
+        const staffRefs = await db.collection('ngo_staff').where('email', '==', email).get();
 
         let userData = null;
         let role = null;
@@ -147,7 +149,11 @@ app.post('/api/auth/login', async (req, res) => {
             role = 'NGO';
         } else if (!userProfileRefs.empty) {
             userData = userProfileRefs.docs[0];
-            role = 'USER';
+            const profileRole = String(userData.get('role') || 'USER').toUpperCase();
+            role = profileRole === 'STAFF' ? 'STAFF' : 'USER';
+        } else if (!staffRefs.empty) {
+            userData = staffRefs.docs[0];
+            role = 'STAFF';
         }
 
         if (!userData) {
@@ -1256,6 +1262,90 @@ app.get('/api/admin/stats', verifyToken, async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// ============= NOTIFICATION ROUTE =============
+
+// Send push notification to nearby NGOs
+// Expected body: { incidentLat: number, incidentLng: number, incidentId: string, animalType: string }
+app.post('/api/notify-ngos', async (req, res) => {
+    try {
+        const { incidentLat, incidentLng, incidentId, animalType = "An animal" } = req.body;
+
+        if (incidentLat === undefined || incidentLng === undefined) {
+             return res.status(400).json({ success: false, error: 'Missing incident coordinates' });
+        }
+
+        // Fetch all NGOs to check distance
+        const ngosSnapshot = await db.collection('ngo_profiles').get();
+
+        // Let's use a 10km radius (10000 meters)
+        const SEARCH_RADIUS_METERS = 10000;
+
+        // Haversine formula to calculate distance between 2 coordinates in meters
+        const getDistance = (lat1, lon1, lat2, lon2) => {
+            const R = 6371e3; // Earth radius in meters
+            const phi1 = lat1 * Math.PI/180;
+            const phi2 = lat2 * Math.PI/180;
+            const deltaPhi = (lat2-lat1) * Math.PI/180;
+            const deltaLambda = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+                      Math.cos(phi1) * Math.cos(phi2) *
+                      Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c; // in meters
+        };
+
+        const tokens = [];
+
+        ngosSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.fcmToken && data.latitude !== undefined && data.longitude !== undefined) {
+                const distance = getDistance(incidentLat, incidentLng, data.latitude, data.longitude);
+                if (distance <= SEARCH_RADIUS_METERS) {
+                    tokens.push(data.fcmToken);
+                }
+            } else if (data.fcmToken) {
+                // If the NGO has a token but no lat/long stored, you might want to blindly notify them
+                // (Optional: remove this if you only want to strictly notify those with valid coords)
+                tokens.push(data.fcmToken);
+            }
+        });
+
+        if (tokens.length === 0) {
+            return res.json({ success: true, message: "No nearby NGOs found to notify." });
+        }
+
+        // Create the push notification payload
+        const payload = {
+            notification: {
+                title: `🚨 Emergency: ${animalType} in Need!`,
+                body: `A new incident has been reported near your location.`,
+            },
+            data: {
+                incidentId: incidentId || 'UNKNOWN',
+                click_action: 'FLUTTER_NOTIFICATION_CLICK' // Optional for Android to wake up app
+            }
+        };
+
+        // Send to devices
+        const response = await admin.messaging().sendToDevice(tokens, payload);
+
+        console.log(`Sent FCM notifications to ${tokens.length} NGOs. Success: ${response.successCount}, Failed: ${response.failureCount}`);
+
+        res.json({
+            success: true,
+            message: "Notifications dispatched",
+            successCount: response.successCount,
+            failureCount: response.failureCount
+        });
+
+    } catch (error) {
+        console.error("Error sending NGO notifications:", error);
+        res.status(500).json({ success: false, error: 'Internal server error while notifying NGOs' });
     }
 });
 

@@ -16,20 +16,17 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class NetworkManager {
 
-    public interface ApiCallback<T> {
-        void onSuccess(T response);
-        void onError(String error);
-    }
-
-    private final ApiService apiService;
-    private final TokenManager tokenManager;
+    private ApiService apiService;
+    private TokenManager tokenManager;
+    
+    // USB debugging mode: use localhost with adb reverse on each phone.
+    public static final String BASE_URL = "http://127.0.0.1:3000/";
 
     public NetworkManager(Context context) {
         OkHttpClient client = ApiClient.getClient(context);
-        String baseUrl = "http://10.143.57.191:3000/";
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(baseUrl)
+                .baseUrl(BASE_URL)
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
